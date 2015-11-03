@@ -17,17 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+@ParametersAreNonnullByDefault
+package com.wirelust.sonar.plugins.bitbucket;
 
-import org.junit.Test;
+import javax.annotation.ParametersAreNonnullByDefault;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class GitHubPluginTest {
-
-  @Test
-  public void uselessTest() {
-    assertThat(new GitHubPlugin().getExtensions().size()).isGreaterThan(1);
-  }
-
-}

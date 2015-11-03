@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +28,7 @@ import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.config.Settings;
 
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class GitHubPluginConfiguration implements BatchComponent {
+public class BitBucketPluginConfiguration implements BatchComponent {
 
   public static final int MAX_GLOBAL_ISSUES  = 10;
 
@@ -36,21 +36,21 @@ public class GitHubPluginConfiguration implements BatchComponent {
   private Pattern gitSshPattern;
   private Pattern gitHttpPattern;
 
-  public GitHubPluginConfiguration(Settings settings) {
+  public BitBucketPluginConfiguration(Settings settings) {
     this.settings = settings;
     this.gitSshPattern = Pattern.compile(".*@github\\.com:(.*/.*)\\.git");
     this.gitHttpPattern = Pattern.compile("https?://github\\.com/(.*/.*)\\.git");
   }
 
   public int pullRequestNumber() {
-    return settings.getInt(GitHubPlugin.GITHUB_PULL_REQUEST);
+    return settings.getInt(BitBucketPlugin.GITHUB_PULL_REQUEST);
   }
 
   @CheckForNull
   public String repository() {
     String repo = null;
-    if (settings.hasKey(GitHubPlugin.GITHUB_REPO)) {
-      String urlOrRepo = settings.getString(GitHubPlugin.GITHUB_REPO);
+    if (settings.hasKey(BitBucketPlugin.GITHUB_REPO)) {
+      String urlOrRepo = settings.getString(BitBucketPlugin.GITHUB_REPO);
       repo = parseGitUrl(urlOrRepo);
       if (repo == null) {
         repo = urlOrRepo;
@@ -82,20 +82,20 @@ public class GitHubPluginConfiguration implements BatchComponent {
 
   @CheckForNull
   public String oauth() {
-    return settings.getString(GitHubPlugin.GITHUB_OAUTH);
+    return settings.getString(BitBucketPlugin.GITHUB_OAUTH);
   }
 
   @CheckForNull
   public String login() {
-    return settings.getString(GitHubPlugin.GITHUB_LOGIN);
+    return settings.getString(BitBucketPlugin.GITHUB_LOGIN);
   }
 
   public boolean isEnabled() {
-    return settings.hasKey(GitHubPlugin.GITHUB_PULL_REQUEST);
+    return settings.hasKey(BitBucketPlugin.GITHUB_PULL_REQUEST);
   }
 
   public String endpoint() {
-    return settings.getString(GitHubPlugin.GITHUB_ENDPOINT);
+    return settings.getString(BitBucketPlugin.GITHUB_ENDPOINT);
   }
 
 }

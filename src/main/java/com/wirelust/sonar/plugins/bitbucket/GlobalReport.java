@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import javax.annotation.Nullable;
 import org.kohsuke.github.GHCommitState;
@@ -49,9 +49,9 @@ public class GlobalReport {
       sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n")
         .append(notReportedOnDiff.toString());
 
-      if (notReportedIssueCount >= GitHubPluginConfiguration.MAX_GLOBAL_ISSUES) {
+      if (notReportedIssueCount >= BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {
         sb.append("* ... ")
-          .append(notReportedIssueCount - GitHubPluginConfiguration.MAX_GLOBAL_ISSUES)
+          .append(notReportedIssueCount - BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES)
           .append(" more\n");
       }
     }
@@ -128,7 +128,7 @@ public class GlobalReport {
     if (!reportedOnDiff) {
       notReportedIssueCount++;
 
-      if (notReportedDisplayedIssueCount < GitHubPluginConfiguration.MAX_GLOBAL_ISSUES) {
+      if (notReportedDisplayedIssueCount < BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {
         notReportedOnDiff
           .append("* ")
           .append(markDownUtils.globalIssue(issue.severity(), issue.message(), issue.ruleKey().toString(), githubUrl, issue.componentKey()))

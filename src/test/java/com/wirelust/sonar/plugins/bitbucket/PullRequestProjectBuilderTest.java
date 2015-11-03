@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import java.io.File;
 import org.junit.Before;
@@ -49,9 +49,9 @@ public class PullRequestProjectBuilderTest {
 
   @Before
   public void prepare() {
-    settings = new Settings(new PropertyDefinitions(GitHubPlugin.class));
+    settings = new Settings(new PropertyDefinitions(BitBucketPlugin.class));
     facade = mock(PullRequestFacade.class);
-    pullRequestProjectBuilder = new PullRequestProjectBuilder(new GitHubPluginConfiguration(settings), facade, settings);
+    pullRequestProjectBuilder = new PullRequestProjectBuilder(new BitBucketPluginConfiguration(settings), facade, settings);
 
   }
 
@@ -63,7 +63,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldFailIfNotPreview() {
-    settings.setProperty(GitHubPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
 
     thrown.expect(MessageException.class);
     thrown.expectMessage("The GitHub plugin is only intended to be used in preview or issues mode. Please set 'sonar.analysis.mode'.");
@@ -73,7 +73,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfDryRun() {
-    settings.setProperty(GitHubPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.DRY_RUN, "true");
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -83,7 +83,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfPreview() {
-    settings.setProperty(GitHubPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_PREVIEW);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -93,7 +93,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfIncremental() {
-    settings.setProperty(GitHubPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_INCREMENTAL);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -103,7 +103,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfIssues() {
-    settings.setProperty(GitHubPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, "issues");
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));

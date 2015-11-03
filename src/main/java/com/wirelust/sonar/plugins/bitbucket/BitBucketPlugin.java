@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,30 +29,30 @@ import org.sonar.api.SonarPlugin;
 
 @Properties({
   @Property(
-    key = GitHubPlugin.GITHUB_ENDPOINT,
+    key = BitBucketPlugin.GITHUB_ENDPOINT,
     name = "GitHub API Endpoint",
     description = "URL to access GitHub WS API. Deafult value is fine for public GitHub. Can be modified for GitHub enterprise.",
     defaultValue = "https://api.github.com",
     global = true),
   @Property(
-    key = GitHubPlugin.GITHUB_LOGIN,
+    key = BitBucketPlugin.GITHUB_LOGIN,
     name = "GitHub Login",
     description = "GitHub account used to perform operations like adding comments on pull requests.",
     global = false),
   @Property(
-    key = GitHubPlugin.GITHUB_OAUTH,
+    key = BitBucketPlugin.GITHUB_OAUTH,
     name = "GitHub OAuth token",
     description = "Authentication token",
     type = PropertyType.PASSWORD,
     global = false),
   @Property(
-    key = GitHubPlugin.GITHUB_REPO,
+    key = BitBucketPlugin.GITHUB_REPO,
     name = "GitHub repository",
     description = "GitHub repository for this project. Will be guessed from '" + CoreProperties.LINKS_SOURCES_DEV + "' if present",
     global = false,
     project = false),
   @Property(
-    key = GitHubPlugin.GITHUB_PULL_REQUEST,
+    key = BitBucketPlugin.GITHUB_PULL_REQUEST,
     name = "GitHub Pull Request",
     description = "Pull request number",
     type = PropertyType.INTEGER,
@@ -60,7 +60,7 @@ import org.sonar.api.SonarPlugin;
     project = false,
     module = false)
 })
-public class GitHubPlugin extends SonarPlugin {
+public class BitBucketPlugin extends SonarPlugin {
 
   public static final String GITHUB_ENDPOINT = "sonar.github.endpoint";
   public static final String GITHUB_LOGIN = "sonar.github.login";
@@ -72,7 +72,7 @@ public class GitHubPlugin extends SonarPlugin {
   public List getExtensions() {
     return Arrays.asList(
       PullRequestIssuePostJob.class,
-      GitHubPluginConfiguration.class,
+      BitBucketPluginConfiguration.class,
       PullRequestProjectBuilder.class,
       PullRequestFacade.class,
       InputFileCacheSensor.class,

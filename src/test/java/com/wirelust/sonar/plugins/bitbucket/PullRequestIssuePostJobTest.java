@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.Arrays;
 import org.junit.Before;
@@ -56,7 +56,7 @@ public class PullRequestIssuePostJobTest {
   @Before
   public void prepare() throws Exception {
     pullRequestFacade = mock(PullRequestFacade.class);
-    GitHubPluginConfiguration config = mock(GitHubPluginConfiguration.class);
+    BitBucketPluginConfiguration config = mock(BitBucketPluginConfiguration.class);
     issues = mock(ProjectIssues.class);
     cache = mock(InputFileCache.class);
     Settings settings = new Settings(new PropertyDefinitions(PropertyDefinition.builder(CoreProperties.SERVER_BASE_URL)

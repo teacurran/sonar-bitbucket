@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,13 +35,13 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   private final PullRequestFacade pullRequestFacade;
   private final ProjectIssues projectIssues;
-  private final GitHubPluginConfiguration gitHubPluginConfiguration;
+  private final BitBucketPluginConfiguration bitBucketPluginConfiguration;
   private final InputFileCache inputFileCache;
   private final MarkDownUtils markDownUtils;
 
-  public PullRequestIssuePostJob(GitHubPluginConfiguration gitHubPluginConfiguration, PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
-    InputFileCache inputFileCache, MarkDownUtils markDownUtils) {
-    this.gitHubPluginConfiguration = gitHubPluginConfiguration;
+  public PullRequestIssuePostJob(BitBucketPluginConfiguration bitBucketPluginConfiguration, PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
+                                 InputFileCache inputFileCache, MarkDownUtils markDownUtils) {
+    this.bitBucketPluginConfiguration = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
     this.projectIssues = projectIssues;
     this.inputFileCache = inputFileCache;
@@ -50,7 +50,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   @Override
   public boolean shouldExecuteOnProject(Project project) {
-    return gitHubPluginConfiguration.isEnabled();
+    return bitBucketPluginConfiguration.isEnabled();
   }
 
   @Override

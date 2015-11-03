@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import org.kohsuke.github.GHCommitState;
 import org.sonar.api.CoreProperties;
@@ -27,28 +27,28 @@ import org.sonar.api.utils.MessageException;
 
 /**
  * Trigger load of pull request metadata at the very beginning of SQ analysis. Also
- * set "in progress" status on the pull request. 
+ * set "in progress" status on the pull request.
  *
  */
 public class PullRequestProjectBuilder extends ProjectBuilder {
 
-  private final GitHubPluginConfiguration gitHubPluginConfiguration;
+  private final BitBucketPluginConfiguration bitBucketPluginConfiguration;
   private final PullRequestFacade pullRequestFacade;
   private final Settings settings;
 
-  public PullRequestProjectBuilder(GitHubPluginConfiguration gitHubPluginConfiguration, PullRequestFacade pullRequestFacade, Settings settings) {
-    this.gitHubPluginConfiguration = gitHubPluginConfiguration;
+  public PullRequestProjectBuilder(BitBucketPluginConfiguration bitBucketPluginConfiguration, PullRequestFacade pullRequestFacade, Settings settings) {
+    this.bitBucketPluginConfiguration = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
     this.settings = settings;
   }
 
   @Override
   public void build(Context context) {
-    if (!gitHubPluginConfiguration.isEnabled()) {
+    if (!bitBucketPluginConfiguration.isEnabled()) {
       return;
     }
     checkMode();
-    int pullRequestNumber = gitHubPluginConfiguration.pullRequestNumber();
+    int pullRequestNumber = bitBucketPluginConfiguration.pullRequestNumber();
     pullRequestFacade.init(pullRequestNumber, context.projectReactor().getRoot().getBaseDir());
 
     pullRequestFacade.createOrUpdateSonarQubeStatus(GHCommitState.PENDING, "SonarQube analysis in progress");

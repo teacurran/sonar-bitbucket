@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
@@ -54,7 +54,7 @@ public class PullRequestFacadeTest {
 
     File gitBasedir = temp.newFolder();
 
-    PullRequestFacade facade = new PullRequestFacade(mock(GitHubPluginConfiguration.class));
+    PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
     facade.setGitBaseDir(gitBasedir);
     GHRepository ghRepo = mock(GHRepository.class);
     when(ghRepo.getHtmlUrl()).thenReturn(new URL("https://github.com/SonarSource/sonar-java"));
@@ -104,7 +104,7 @@ public class PullRequestFacadeTest {
 
   @Test
   public void testEmptyGetCommitStatusForContext() throws IOException {
-    PullRequestFacade facade = new PullRequestFacade(mock(GitHubPluginConfiguration.class));
+    PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
     GHRepository ghRepo = mock(GHRepository.class);
     PagedIterable<GHCommitStatus> ghCommitStatuses = Mockito.mock(PagedIterable.class);
     GHPullRequest pr = mock(GHPullRequest.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
@@ -116,7 +116,7 @@ public class PullRequestFacadeTest {
 
   @Test
   public void testGetCommitStatusForContextWithOneCorrectStatus() throws IOException {
-    PullRequestFacade facade = new PullRequestFacade(mock(GitHubPluginConfiguration.class));
+    PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
     GHRepository ghRepo = mock(GHRepository.class);
     PagedIterable<GHCommitStatus> ghCommitStatuses = Mockito.mock(PagedIterable.class);
     List<GHCommitStatus> ghCommitStatusesList = new ArrayList<>();

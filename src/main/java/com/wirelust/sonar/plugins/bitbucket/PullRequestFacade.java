@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -59,7 +59,7 @@ public class PullRequestFacade implements BatchComponent {
   @VisibleForTesting
   static final String COMMIT_CONTEXT = "sonarqube";
 
-  private final GitHubPluginConfiguration config;
+  private final BitBucketPluginConfiguration config;
   private Map<String, Map<Integer, Integer>> patchPositionMappingByFile;
   private Map<String, Map<Integer, GHPullRequestReviewComment>> existingReviewCommentsByLocationByFile = new HashMap<>();
   private GHRepository ghRepo;
@@ -68,7 +68,7 @@ public class PullRequestFacade implements BatchComponent {
   private File gitBaseDir;
   private String myself;
 
-  public PullRequestFacade(GitHubPluginConfiguration config) {
+  public PullRequestFacade(BitBucketPluginConfiguration config) {
     this.config = config;
   }
 

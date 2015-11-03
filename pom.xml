@@ -9,19 +9,19 @@
     <relativePath/>
   </parent>
 
-  <groupId>org.sonarsource.github</groupId>
-  <artifactId>sonar-github-plugin</artifactId>
-  <name>SonarQube :: GitHub Plugin</name>
+  <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
+  <artifactId>sonar-bitbucket-plugin</artifactId>
+  <name>SonarQube :: Bitbucket Plugin</name>
   <packaging>sonar-plugin</packaging>
-  <version>1.1-SNAPSHOT</version>
-  <description>Provide some integration between GitHub and SonarQube</description>
-  <url>http://redirect.sonarsource.com/plugins/github.html</url>
+  <version>1.0-SNAPSHOT</version>
+  <description>Provide some integration between Bitbucket and SonarQube</description>
+  <url>https://github.com/teacurran/sonar-bitbucket</url>
   <inceptionYear>2015</inceptionYear>
-  
+
   <properties>
     <sonar.version>4.5.2</sonar.version>
-    <sonar.pluginName>GitHub</sonar.pluginName>
-    <sonar.pluginClass>org.sonar.plugins.github.GitHubPlugin</sonar.pluginClass>
+    <sonar.pluginName>BitBucket</sonar.pluginName>
+    <sonar.pluginClass>com.wirelust.sonar.plugins.bitbucket.BitBucketPlugin</sonar.pluginClass>
   </properties>
 
   <organization>
@@ -43,18 +43,18 @@
       <name>Julien Henry</name>
       <timezone>+1</timezone>
     </developer>
+    <developer>
+      <id>tcurran</id>
+      <name>Terrence Curran</name>
+      <timezone>-5</timezone>
+    </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:SonarCommunity/sonar-github.git</connection>
-    <developerConnection>scm:git:git@github.com:SonarCommunity/sonar-github.git</developerConnection>
-    <url>https://github.com/SonarCommunity/sonar-github</url>
+    <connection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</connection>
+    <developerConnection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</developerConnection>
+    <url>https://github.com/teacurran/sonar-bitbucket.git</url>
   </scm>
-
-  <issueManagement>
-    <system>jira</system>
-    <url>http://jira.sonarsource.com/browse/SONARGITUB</url>
-  </issueManagement>
 
   <dependencies>
     <dependency>

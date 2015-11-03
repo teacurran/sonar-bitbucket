@@ -17,39 +17,30 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
-import org.sonar.api.batch.Sensor;
-import org.sonar.api.batch.SensorContext;
-import org.sonar.api.batch.fs.FileSystem;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.CheckForNull;
+import org.sonar.api.BatchComponent;
+import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.resources.Project;
 
 /**
  * This is a temporary solution before being able to use new postjob API in SQ 5.2.
  */
-public class InputFileCacheSensor implements Sensor {
+@InstantiationStrategy(InstantiationStrategy.PER_BATCH)
+public class InputFileCache implements BatchComponent {
 
-  private final GitHubPluginConfiguration gitHubPluginConfiguration;
-  private final FileSystem fs;
-  private final InputFileCache inputFileCache;
+  private final Map<String, InputFile> inputFileByKey = new HashMap<>();
 
-  public InputFileCacheSensor(GitHubPluginConfiguration gitHubPluginConfiguration, FileSystem fs, InputFileCache inputFileCache) {
-    this.gitHubPluginConfiguration = gitHubPluginConfiguration;
-    this.fs = fs;
-    this.inputFileCache = inputFileCache;
+  void put(String componentKey, InputFile inputFile) {
+    inputFileByKey.put(componentKey, inputFile);
   }
 
-  @Override
-  public boolean shouldExecuteOnProject(Project project) {
-    return gitHubPluginConfiguration.isEnabled();
-  }
-
-  @Override
-  public void analyse(Project module, SensorContext context) {
-    for (InputFile inputFile : fs.inputFiles(fs.predicates().all())) {
-      inputFileCache.put(context.getResource(inputFile).getEffectiveKey(), inputFile);
-    }
+  @CheckForNull
+  public InputFile byKey(String componentKey) {
+    return inputFileByKey.get(componentKey);
   }
 
   @Override

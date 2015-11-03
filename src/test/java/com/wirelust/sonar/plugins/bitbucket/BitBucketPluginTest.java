@@ -17,35 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.plugins.github;
+package com.wirelust.sonar.plugins.bitbucket;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.annotation.CheckForNull;
-import org.sonar.api.BatchComponent;
-import org.sonar.api.batch.InstantiationStrategy;
-import org.sonar.api.batch.fs.InputFile;
+import org.junit.Test;
 
-/**
- * This is a temporary solution before being able to use new postjob API in SQ 5.2.
- */
-@InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class InputFileCache implements BatchComponent {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final Map<String, InputFile> inputFileByKey = new HashMap<>();
+public class BitBucketPluginTest {
 
-  void put(String componentKey, InputFile inputFile) {
-    inputFileByKey.put(componentKey, inputFile);
-  }
-
-  @CheckForNull
-  public InputFile byKey(String componentKey) {
-    return inputFileByKey.get(componentKey);
-  }
-
-  @Override
-  public String toString() {
-    return "GitHub Plugin InputFile Cache";
+  @Test
+  public void uselessTest() {
+    assertThat(new BitBucketPlugin().getExtensions().size()).isGreaterThan(1);
   }
 
 }
