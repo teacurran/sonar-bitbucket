@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *
@@ -30,7 +30,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.Response;
+
+import com.wirelust.bitbucket.client.BitbucketAuthClient;
+import com.wirelust.bitbucket.client.BitbucketV2Client;
 import org.apache.commons.io.IOUtils;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
 import org.kohsuke.github.GHIssueComment;
@@ -67,6 +76,7 @@ public class PullRequestFacade implements BatchComponent {
   private Map<Integer, GHPullRequestReviewComment> reviewCommentToBeDeletedById = new HashMap<>();
   private File gitBaseDir;
   private String myself;
+  private BitbucketV2Client bitbucketClient;
 
   public PullRequestFacade(BitBucketPluginConfiguration config) {
     this.config = config;
@@ -77,6 +87,13 @@ public class PullRequestFacade implements BatchComponent {
       throw new IllegalStateException("Unable to find Git root directory. Is " + projectBaseDir + " part of a Git repository?");
     }
     try {
+
+      BitbucketAuthClient authClient = getAuthClient();
+      Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
+
+      /*
+      BitbucketV2Client tokenClient = ResteasyClient
+
       GitHub github = new GitHubBuilder().withEndpoint(config.endpoint()).withOAuthToken(config.oauth(), config.login()).build();
       setGhRepo(github.getRepository(config.repository()));
       setPr(ghRepo.getPullRequest(pullRequestNumber));
@@ -84,9 +101,42 @@ public class PullRequestFacade implements BatchComponent {
       myself = github.getMyself().getLogin();
       loadExistingReviewComments();
       patchPositionMappingByFile = mapPatchPositionsToLines(pr);
-    } catch (IOException e) {
+      */
+    } catch (Exception e) {
       throw new IllegalStateException("Unable to perform GitHub WS operation", e);
     }
+  }
+
+  public BitbucketAuthClient getAuthClient() {
+    ResteasyClient client = new ResteasyClientBuilder().build();
+    client.register(JacksonConfigurationProvider.class);
+
+    ResteasyWebTarget target = client.target(config.endpoint());
+    BitbucketAuthClient authClient = target.proxy(BitbucketAuthClient.class);
+
+    return authClient;
+  }
+
+
+  public BitbucketV2Client getV2Client(final String authToken) {
+    ResteasyClient client = new ResteasyClientBuilder().build();
+    client.register(JacksonConfigurationProvider.class);
+
+    if (authToken != null) {
+      client.register(new ClientRequestFilter() {
+        @Override
+        public void filter(ClientRequestContext requestContext) throws IOException {
+
+          //String base64Token = Base64.encodeBase64String(token.getBytes(StandardCharsets.UTF_8));
+          requestContext.getHeaders().add("Authorization", "Bearer " + authToken);
+        }
+      });
+    }
+
+    ResteasyWebTarget target = client.target(config.endpoint());
+    BitbucketV2Client bitbucketV2Client = target.proxy(BitbucketV2Client.class);
+
+    return bitbucketV2Client;
   }
 
   @VisibleForTesting

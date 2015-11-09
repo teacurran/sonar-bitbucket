@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *

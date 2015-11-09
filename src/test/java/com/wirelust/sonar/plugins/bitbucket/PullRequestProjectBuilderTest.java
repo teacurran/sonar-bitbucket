@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *
@@ -63,7 +63,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldFailIfNotPreview() {
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
 
     thrown.expect(MessageException.class);
     thrown.expectMessage("The GitHub plugin is only intended to be used in preview or issues mode. Please set 'sonar.analysis.mode'.");
@@ -73,7 +73,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfDryRun() {
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.DRY_RUN, "true");
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -83,7 +83,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfPreview() {
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_PREVIEW);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -93,7 +93,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfIncremental() {
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_INCREMENTAL);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
@@ -103,7 +103,7 @@ public class PullRequestProjectBuilderTest {
 
   @Test
   public void shouldNotFailIfIssues() {
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, "issues");
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));

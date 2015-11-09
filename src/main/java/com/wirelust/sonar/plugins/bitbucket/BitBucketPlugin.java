@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *
@@ -29,31 +29,37 @@ import org.sonar.api.SonarPlugin;
 
 @Properties({
   @Property(
-    key = BitBucketPlugin.GITHUB_ENDPOINT,
-    name = "GitHub API Endpoint",
-    description = "URL to access GitHub WS API. Deafult value is fine for public GitHub. Can be modified for GitHub enterprise.",
-    defaultValue = "https://api.github.com",
+    key = BitBucketPlugin.BITBUCKET_ENDPOINT,
+    name = "Bitbucket API Endpoint",
+    description = "URL to access BitBucket API. Deafult value is fine for public BitBucket. Can be modified for BitBucket enterprise.",
+    defaultValue = "https://bitbucket.org/api",
     global = true),
   @Property(
-    key = BitBucketPlugin.GITHUB_LOGIN,
-    name = "GitHub Login",
-    description = "GitHub account used to perform operations like adding comments on pull requests.",
+    key = BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT,
+    name = "BitBucket OAuth Token Endpoint",
+    description = "BitBucket OAuth Token Endpoint",
+    defaultValue = "https://bitbucket.org/site/oauth2/access_token",
+    global = true),
+  @Property(
+    key = BitBucketPlugin.BITBUCKET_LOGIN,
+    name = "BitBucket Login",
+    description = "BitBucket account used to perform operations like adding comments on pull requests.",
     global = false),
   @Property(
-    key = BitBucketPlugin.GITHUB_OAUTH,
-    name = "GitHub OAuth token",
-    description = "Authentication token",
+    key = BitBucketPlugin.BITBUCKET_PASSWORD,
+    name = "BitBucket Password",
+    description = "BitBucket Password",
     type = PropertyType.PASSWORD,
-    global = false),
+    global = true),
   @Property(
-    key = BitBucketPlugin.GITHUB_REPO,
-    name = "GitHub repository",
-    description = "GitHub repository for this project. Will be guessed from '" + CoreProperties.LINKS_SOURCES_DEV + "' if present",
+    key = BitBucketPlugin.BITBUCKET_REPO,
+    name = "BitBucket repository",
+    description = "BitBucket repository for this project. Will be guessed from '" + CoreProperties.LINKS_SOURCES_DEV + "' if present",
     global = false,
     project = false),
   @Property(
-    key = BitBucketPlugin.GITHUB_PULL_REQUEST,
-    name = "GitHub Pull Request",
+    key = BitBucketPlugin.BITBUCKET_PULL_REQUEST,
+    name = "BitBucket Pull Request",
     description = "Pull request number",
     type = PropertyType.INTEGER,
     global = false,
@@ -62,11 +68,13 @@ import org.sonar.api.SonarPlugin;
 })
 public class BitBucketPlugin extends SonarPlugin {
 
-  public static final String GITHUB_ENDPOINT = "sonar.github.endpoint";
-  public static final String GITHUB_LOGIN = "sonar.github.login";
-  public static final String GITHUB_OAUTH = "sonar.github.oauth";
-  public static final String GITHUB_REPO = "sonar.github.repository";
-  public static final String GITHUB_PULL_REQUEST = "sonar.github.pullRequest";
+  public static final String BITBUCKET_ENDPOINT = "sonar.bitbucket.endpoint";
+  public static final String BITBUCKET_TOKEN_ENDPOINT = "sonar.bitbucket.token.endpoint";
+  public static final String BITBUCKET_LOGIN = "sonar.bitbucket.login";
+  public static final String BITBUCKET_PASSWORD = "sonar.bitbucket.password";
+  public static final String BITBUCKET_REPO = "sonar.bitbucket.repository";
+  public static final String BITBUCKET_PULL_REQUEST = "sonar.bitbucket.pullRequest";
+
 
   @Override
   public List getExtensions() {

@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *
@@ -38,19 +38,19 @@ public class BitBucketPluginConfiguration implements BatchComponent {
 
   public BitBucketPluginConfiguration(Settings settings) {
     this.settings = settings;
-    this.gitSshPattern = Pattern.compile(".*@github\\.com:(.*/.*)\\.git");
-    this.gitHttpPattern = Pattern.compile("https?://github\\.com/(.*/.*)\\.git");
+    this.gitSshPattern = Pattern.compile(".*@bitbucket\\.com:(.*/.*)\\.git");
+    this.gitHttpPattern = Pattern.compile("https?://bitbucket\\.com/(.*/.*)\\.git");
   }
 
   public int pullRequestNumber() {
-    return settings.getInt(BitBucketPlugin.GITHUB_PULL_REQUEST);
+    return settings.getInt(BitBucketPlugin.BITBUCKET_PULL_REQUEST);
   }
 
   @CheckForNull
   public String repository() {
     String repo = null;
-    if (settings.hasKey(BitBucketPlugin.GITHUB_REPO)) {
-      String urlOrRepo = settings.getString(BitBucketPlugin.GITHUB_REPO);
+    if (settings.hasKey(BitBucketPlugin.BITBUCKET_REPO)) {
+      String urlOrRepo = settings.getString(BitBucketPlugin.BITBUCKET_REPO);
       repo = parseGitUrl(urlOrRepo);
       if (repo == null) {
         repo = urlOrRepo;
@@ -81,21 +81,26 @@ public class BitBucketPluginConfiguration implements BatchComponent {
   }
 
   @CheckForNull
-  public String oauth() {
-    return settings.getString(BitBucketPlugin.GITHUB_OAUTH);
+  public String tokenEndpoint() {
+    return settings.getString(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT);
+  }
+
+  @CheckForNull
+  public String password() {
+    return settings.getString(BitBucketPlugin.BITBUCKET_PASSWORD);
   }
 
   @CheckForNull
   public String login() {
-    return settings.getString(BitBucketPlugin.GITHUB_LOGIN);
+    return settings.getString(BitBucketPlugin.BITBUCKET_LOGIN);
   }
 
   public boolean isEnabled() {
-    return settings.hasKey(BitBucketPlugin.GITHUB_PULL_REQUEST);
+    return settings.hasKey(BitBucketPlugin.BITBUCKET_PULL_REQUEST);
   }
 
   public String endpoint() {
-    return settings.getString(BitBucketPlugin.GITHUB_ENDPOINT);
+    return settings.getString(BitBucketPlugin.BITBUCKET_ENDPOINT);
   }
 
 }

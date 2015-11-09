@@ -1,5 +1,5 @@
 /*
- * SonarQube :: GitHub Plugin
+ * SonarQube :: Bitbucket Plugin
  * Copyright (C) 2015 SonarSource
  * sonarqube@googlegroups.com
  *
@@ -52,29 +52,29 @@ public class BitBucketPluginConfigurationTest {
     settings.setProperty(CoreProperties.LINKS_SOURCES_DEV, "scm:git:git@github.com:SonarCommunity2/github-integration.git");
     assertThat(config.repository()).isEqualTo("SonarCommunity2/github-integration");
 
-    settings.setProperty(BitBucketPlugin.GITHUB_REPO, "https://github.com/SonarCommunity/sonar-github.git");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "https://github.com/SonarCommunity/sonar-github.git");
     assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-github");
-    settings.setProperty(BitBucketPlugin.GITHUB_REPO, "http://github.com/SonarCommunity/sonar-github.git");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "http://github.com/SonarCommunity/sonar-github.git");
     assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-github");
-    settings.setProperty(BitBucketPlugin.GITHUB_REPO, "SonarCommunity3/github-integration");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "SonarCommunity3/github-integration");
     assertThat(config.repository()).isEqualTo("SonarCommunity3/github-integration");
   }
 
   @Test
   public void other() {
-    settings.setProperty(BitBucketPlugin.GITHUB_LOGIN, "login");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
     assertThat(config.login()).isEqualTo("login");
 
-    settings.setProperty(BitBucketPlugin.GITHUB_OAUTH, "oauth");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_OAUTH, "oauth");
     assertThat(config.oauth()).isEqualTo("oauth");
 
     assertThat(config.isEnabled()).isFalse();
-    settings.setProperty(BitBucketPlugin.GITHUB_PULL_REQUEST, "3");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "3");
     assertThat(config.pullRequestNumber()).isEqualTo(3);
     assertThat(config.isEnabled()).isTrue();
 
     assertThat(config.endpoint()).isEqualTo("https://api.github.com");
-    settings.setProperty(BitBucketPlugin.GITHUB_ENDPOINT, "http://myprivate-endpoint");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_ENDPOINT, "http://myprivate-endpoint");
     assertThat(config.endpoint()).isEqualTo("http://myprivate-endpoint");
   }
 
