@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
+import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -90,6 +91,10 @@ public class PullRequestFacade implements BatchComponent {
 
       BitbucketAuthClient authClient = getAuthClient();
       Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
+      LOG.info("received bitbucket response to login:{}", response.getStatus());
+
+      AccessToken accessToken = response.readEntity(AccessToken.class);
+      LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
 
       /*
       BitbucketV2Client tokenClient = ResteasyClient

@@ -46,18 +46,18 @@ public class BitBucketPluginConfigurationTest {
     settings.setProperty(CoreProperties.LINKS_SOURCES_DEV, "do_not_match");
     assertThat(config.repository()).isNull();
 
-    settings.setProperty(CoreProperties.LINKS_SOURCES, "scm:git:git@github.com:SonarCommunity/github-integration.git");
-    assertThat(config.repository()).isEqualTo("SonarCommunity/github-integration");
+    settings.setProperty(CoreProperties.LINKS_SOURCES, "scm:git:git@bitbucket.com:SonarCommunity/bitbucket-integration.git");
+    assertThat(config.repository()).isEqualTo("SonarCommunity/bitbucket-integration");
 
-    settings.setProperty(CoreProperties.LINKS_SOURCES_DEV, "scm:git:git@github.com:SonarCommunity2/github-integration.git");
-    assertThat(config.repository()).isEqualTo("SonarCommunity2/github-integration");
+    settings.setProperty(CoreProperties.LINKS_SOURCES_DEV, "scm:git:git@bitbucket.com:SonarCommunity2/bitbucket-integration.git");
+    assertThat(config.repository()).isEqualTo("SonarCommunity2/bitbucket-integration");
 
-    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "https://github.com/SonarCommunity/sonar-github.git");
-    assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-github");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "http://github.com/SonarCommunity/sonar-github.git");
-    assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-github");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "SonarCommunity3/github-integration");
-    assertThat(config.repository()).isEqualTo("SonarCommunity3/github-integration");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "https://bitbucket.com/SonarCommunity/sonar-bitbucket.git");
+    assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-bitbucket");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "http://bitbucket.com/SonarCommunity/sonar-bitbucket.git");
+    assertThat(config.repository()).isEqualTo("SonarCommunity/sonar-bitbucket");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "SonarCommunity3/bitbucket-integration");
+    assertThat(config.repository()).isEqualTo("SonarCommunity3/bitbucket-integration");
   }
 
   @Test
@@ -65,15 +65,15 @@ public class BitBucketPluginConfigurationTest {
     settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
     assertThat(config.login()).isEqualTo("login");
 
-    settings.setProperty(BitBucketPlugin.BITBUCKET_OAUTH, "oauth");
-    assertThat(config.oauth()).isEqualTo("oauth");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PASSWORD, "password");
+    assertThat(config.password()).isEqualTo("password");
 
     assertThat(config.isEnabled()).isFalse();
     settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "3");
     assertThat(config.pullRequestNumber()).isEqualTo(3);
     assertThat(config.isEnabled()).isTrue();
 
-    assertThat(config.endpoint()).isEqualTo("https://api.github.com");
+    assertThat(config.endpoint()).isEqualTo("https://bitbucket.org/api");
     settings.setProperty(BitBucketPlugin.BITBUCKET_ENDPOINT, "http://myprivate-endpoint");
     assertThat(config.endpoint()).isEqualTo("http://myprivate-endpoint");
   }
