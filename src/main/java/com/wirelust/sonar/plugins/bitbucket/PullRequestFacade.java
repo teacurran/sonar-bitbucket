@@ -36,6 +36,9 @@ import javax.ws.rs.core.Response;
 
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
+import com.wirelust.bitbucket.client.representations.CommentList;
+import com.wirelust.bitbucket.client.representations.PullRequest;
+import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -47,9 +50,6 @@ import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestFileDetail;
 import org.kohsuke.github.GHPullRequestReviewComment;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
@@ -72,8 +72,11 @@ public class PullRequestFacade implements BatchComponent {
   private final BitBucketPluginConfiguration config;
   private Map<String, Map<Integer, Integer>> patchPositionMappingByFile;
   private Map<String, Map<Integer, GHPullRequestReviewComment>> existingReviewCommentsByLocationByFile = new HashMap<>();
-  private GHRepository ghRepo;
-  private GHPullRequest pr;
+
+  private Repository repository;
+  private PullRequest pullRequest;
+  private CommentList commentList;
+
   private Map<Integer, GHPullRequestReviewComment> reviewCommentToBeDeletedById = new HashMap<>();
   private File gitBaseDir;
   private String myself;
@@ -96,16 +99,29 @@ public class PullRequestFacade implements BatchComponent {
       AccessToken accessToken = response.readEntity(AccessToken.class);
       LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
 
+      BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
+
+      String[] repoSplit = config.repository().split("/");
+
+      Response repoResponse = v2Client.getRepositoryByOwnerRepo(repoSplit[0], repoSplit[1]);
+      setRepository(repoResponse.readEntity(Repository.class));
+
+      Response pullRequestResponse = v2Client.getPullRequestById(repoSplit[0], repoSplit[1], Integer.toString(pullRequestNumber));
+      setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
+
+      Response commentResponse = v2Client.getPullRequestComments(repoSplit[0], repoSplit[1], Long.toString(pullRequest.getId()));
+      commentList = commentResponse.readEntity(CommentList.class);
+
       /*
       BitbucketV2Client tokenClient = ResteasyClient
 
       GitHub github = new GitHubBuilder().withEndpoint(config.endpoint()).withOAuthToken(config.oauth(), config.login()).build();
       setGhRepo(github.getRepository(config.repository()));
-      setPr(ghRepo.getPullRequest(pullRequestNumber));
-      LOG.info("Starting analysis of pull request: " + pr.getHtmlUrl());
+      setPullRequest(ghRepo.getPullRequest(pullRequestNumber));
+      LOG.info("Starting analysis of pull request: " + pullRequest.getHtmlUrl());
       myself = github.getMyself().getLogin();
       loadExistingReviewComments();
-      patchPositionMappingByFile = mapPatchPositionsToLines(pr);
+      patchPositionMappingByFile = mapPatchPositionsToLines(pullRequest);
       */
     } catch (Exception e) {
       throw new IllegalStateException("Unable to perform GitHub WS operation", e);
@@ -145,13 +161,13 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   @VisibleForTesting
-  void setGhRepo(GHRepository ghRepo) {
-    this.ghRepo = ghRepo;
+  void setRepository(Repository repo) {
+    this.repository = repo;
   }
 
   @VisibleForTesting
-  void setPr(GHPullRequest pr) {
-    this.pr = pr;
+  void setPullRequest(PullRequest pullRequest) {
+    this.pullRequest = pullRequest;
   }
 
   public File findGitBaseDir(@Nullable File baseDir) {
@@ -174,7 +190,7 @@ public class PullRequestFacade implements BatchComponent {
    * Load all previous comments made by provided github account.
    */
   private void loadExistingReviewComments() throws IOException {
-    for (GHPullRequestReviewComment comment : pr.listReviewComments()) {
+    for (GHPullRequestReviewComment comment : pullRequest.getlistReviewComments()) {
       if (!myself.equals(comment.getUser().getLogin())) {
         // Ignore comments from other users
         continue;
@@ -262,7 +278,7 @@ public class PullRequestFacade implements BatchComponent {
         }
         reviewCommentToBeDeletedById.remove(existingReview.getId());
       } else {
-        pr.createReviewComment(body, pr.getHead().getSha(), fullpath, lineInPatch);
+        pullRequest.createReviewComment(body, pullRequest.getHead().getSha(), fullpath, lineInPatch);
       }
     } catch (IOException e) {
       throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
@@ -282,7 +298,7 @@ public class PullRequestFacade implements BatchComponent {
 
   public void removePreviousGlobalComments() {
     try {
-      for (GHIssueComment comment : pr.listComments()) {
+      for (GHIssueComment comment : pullRequest.listComments()) {
         if (myself.equals(comment.getUser().getLogin())) {
           comment.delete();
         }
@@ -294,7 +310,7 @@ public class PullRequestFacade implements BatchComponent {
 
   public void addGlobalComment(String comment) {
     try {
-      pr.comment(comment);
+      pullRequest.comment(comment);
     } catch (IOException e) {
       throw new IllegalStateException("Unable to comment the pull request", e);
     }
@@ -304,11 +320,11 @@ public class PullRequestFacade implements BatchComponent {
     try {
       // Copy previous targetUrl in case it was set by an external system (like the CI job).
       String targetUrl = null;
-      GHCommitStatus lastStatus = getCommitStatusForContext(pr, COMMIT_CONTEXT);
+      GHCommitStatus lastStatus = getCommitStatusForContext(pullRequest, COMMIT_CONTEXT);
       if (lastStatus != null) {
         targetUrl = lastStatus.getTargetUrl();
       }
-      ghRepo.createCommitStatus(pr.getHead().getSha(), status, targetUrl, statusDescription, COMMIT_CONTEXT);
+      ghRepo.createCommitStatus(pullRequest.getHead().getSha(), status, targetUrl, statusDescription, COMMIT_CONTEXT);
     } catch (IOException e) {
       throw new IllegalStateException("Unable to update commit status", e);
     }
@@ -318,7 +334,7 @@ public class PullRequestFacade implements BatchComponent {
   public String getGithubUrl(@Nullable InputPath inputPath, @Nullable Integer issueLine) {
     if (inputPath != null) {
       String path = getPath(inputPath);
-      return ghRepo.getHtmlUrl().toString() + "/blob/" + pr.getHead().getSha() + "/" + path + (issueLine != null ? ("#L" + issueLine) : "");
+      return ghRepo.getHtmlUrl().toString() + "/blob/" + pullRequest.getHead().getSha() + "/" + path + (issueLine != null ? ("#L" + issueLine) : "");
     }
     return null;
   }
