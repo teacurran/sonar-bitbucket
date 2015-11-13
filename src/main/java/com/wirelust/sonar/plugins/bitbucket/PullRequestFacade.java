@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
+import com.wirelust.bitbucket.client.representations.Comment;
 import com.wirelust.bitbucket.client.representations.CommentList;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.Repository;
@@ -71,13 +72,13 @@ public class PullRequestFacade implements BatchComponent {
 
   private final BitBucketPluginConfiguration config;
   private Map<String, Map<Integer, Integer>> patchPositionMappingByFile;
-  private Map<String, Map<Integer, GHPullRequestReviewComment>> existingReviewCommentsByLocationByFile = new HashMap<>();
+  private Map<String, Map<Integer, Comment>> existingReviewCommentsByLocationByFile = new HashMap<>();
 
   private Repository repository;
   private PullRequest pullRequest;
   private CommentList commentList;
 
-  private Map<Integer, GHPullRequestReviewComment> reviewCommentToBeDeletedById = new HashMap<>();
+  private Map<Long, Comment> reviewCommentToBeDeletedById = new HashMap<>();
   private File gitBaseDir;
   private String myself;
   private BitbucketV2Client bitbucketClient;
@@ -106,10 +107,10 @@ public class PullRequestFacade implements BatchComponent {
       Response repoResponse = v2Client.getRepositoryByOwnerRepo(repoSplit[0], repoSplit[1]);
       setRepository(repoResponse.readEntity(Repository.class));
 
-      Response pullRequestResponse = v2Client.getPullRequestById(repoSplit[0], repoSplit[1], Integer.toString(pullRequestNumber));
+      Response pullRequestResponse = v2Client.getPullRequestById(repoSplit[0], repoSplit[1], (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
 
-      Response commentResponse = v2Client.getPullRequestComments(repoSplit[0], repoSplit[1], Long.toString(pullRequest.getId()));
+      Response commentResponse = v2Client.getPullRequestComments(repoSplit[0], repoSplit[1], pullRequest.getId());
       commentList = commentResponse.readEntity(CommentList.class);
 
       /*
@@ -190,17 +191,19 @@ public class PullRequestFacade implements BatchComponent {
    * Load all previous comments made by provided github account.
    */
   private void loadExistingReviewComments() throws IOException {
-    for (GHPullRequestReviewComment comment : pullRequest.getlistReviewComments()) {
-      if (!myself.equals(comment.getUser().getLogin())) {
+    for (Comment comment : commentList.getValues()) {
+      if (!myself.equals(comment.getUser().getUsername())) {
         // Ignore comments from other users
         continue;
       }
-      if (!existingReviewCommentsByLocationByFile.containsKey(comment.getPath())) {
-        existingReviewCommentsByLocationByFile.put(comment.getPath(), new HashMap<Integer, GHPullRequestReviewComment>());
+      if (!existingReviewCommentsByLocationByFile.containsKey(comment.getFilename())) {
+        existingReviewCommentsByLocationByFile.put(comment.getFilename(), new HashMap<Integer, Comment>());
       }
       // By default all previous comments will be marked for deletion
       reviewCommentToBeDeletedById.put(comment.getId(), comment);
-      existingReviewCommentsByLocationByFile.get(comment.getPath()).put(comment.getPosition(), comment);
+      if (comment.getInline() != null) {
+        existingReviewCommentsByLocationByFile.get(comment.getFilename()).put(comment.getInline().getTo(), comment);
+      }
     }
   }
 
@@ -272,69 +275,79 @@ public class PullRequestFacade implements BatchComponent {
     Integer lineInPatch = patchPositionMappingByFile.get(fullpath).get(line);
     try {
       if (existingReviewCommentsByLocationByFile.containsKey(fullpath) && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(lineInPatch)) {
-        GHPullRequestReviewComment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(lineInPatch);
-        if (!existingReview.getBody().equals(body)) {
-          existingReview.update(body);
+        Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(lineInPatch);
+
+        // TODO: the goal here is to update existing comments. since we don't have more client utilities right now we have to re-visit it later
+        if (existingReview.getContent() != null && existingReview.getContent().getMarkup() != null) {
+          if (!existingReview.getContent().getMarkup().equals(body)) {
+            existingReview.getContent().setMarkup(body);
+          }
         }
         reviewCommentToBeDeletedById.remove(existingReview.getId());
       } else {
-        pullRequest.createReviewComment(body, pullRequest.getHead().getSha(), fullpath, lineInPatch);
+        // todo, get this to work.
+        //pullRequest.createReviewComment(body, pullRequest.getHead().getSha(), fullpath, lineInPatch);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
     }
 
   }
 
   public void deleteOutdatedComments() {
-    for (GHPullRequestReviewComment reviewToDelete : reviewCommentToBeDeletedById.values()) {
-      try {
-        reviewToDelete.delete();
-      } catch (IOException e) {
-        throw new IllegalStateException("Unable to delete review comment with id " + reviewToDelete.getId(), e);
-      }
+    for (Comment reviewToDelete : reviewCommentToBeDeletedById.values()) {
+        // TODO: implement
+//      try {
+//         reviewToDelete.delete();
+//      } catch (IOException e) {
+//        throw new IllegalStateException("Unable to delete review comment with id " + reviewToDelete.getId(), e);
+//      }
     }
   }
 
   public void removePreviousGlobalComments() {
-    try {
-      for (GHIssueComment comment : pullRequest.listComments()) {
-        if (myself.equals(comment.getUser().getLogin())) {
-          comment.delete();
-        }
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to comment the pull request", e);
-    }
+        // TODO: implement
+//    try {
+//      for (GHIssueComment comment : pullRequest.listComments()) {
+//        if (myself.equals(comment.getUser().getLogin())) {
+//          comment.delete();
+//        }
+//      }
+//    } catch (IOException e) {
+//      throw new IllegalStateException("Unable to comment the pull request", e);
+//    }
   }
 
   public void addGlobalComment(String comment) {
-    try {
-      pullRequest.comment(comment);
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to comment the pull request", e);
-    }
+        // TODO: implement
+//    try {
+//      pullRequest.comment(comment);
+//    } catch (IOException e) {
+//      throw new IllegalStateException("Unable to comment the pull request", e);
+//    }
   }
 
   public void createOrUpdateSonarQubeStatus(GHCommitState status, String statusDescription) {
-    try {
-      // Copy previous targetUrl in case it was set by an external system (like the CI job).
-      String targetUrl = null;
-      GHCommitStatus lastStatus = getCommitStatusForContext(pullRequest, COMMIT_CONTEXT);
-      if (lastStatus != null) {
-        targetUrl = lastStatus.getTargetUrl();
-      }
-      ghRepo.createCommitStatus(pullRequest.getHead().getSha(), status, targetUrl, statusDescription, COMMIT_CONTEXT);
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to update commit status", e);
-    }
+        // TODO: implement
+//    try {
+//      // Copy previous targetUrl in case it was set by an external system (like the CI job).
+//      String targetUrl = null;
+//      GHCommitStatus lastStatus = getCommitStatusForContext(pullRequest, COMMIT_CONTEXT);
+//      if (lastStatus != null) {
+//        targetUrl = lastStatus.getTargetUrl();
+//      }
+//      ghRepo.createCommitStatus(pullRequest.getHead().getSha(), status, targetUrl, statusDescription, COMMIT_CONTEXT);
+//    } catch (IOException e) {
+//      throw new IllegalStateException("Unable to update commit status", e);
+//    }
   }
 
   @CheckForNull
   public String getGithubUrl(@Nullable InputPath inputPath, @Nullable Integer issueLine) {
     if (inputPath != null) {
       String path = getPath(inputPath);
-      return ghRepo.getHtmlUrl().toString() + "/blob/" + pullRequest.getHead().getSha() + "/" + path + (issueLine != null ? ("#L" + issueLine) : "");
+        // TODO: implement
+//      return ghRepo.getHtmlUrl().toString() + "/blob/" + pullRequest.getHead().getSha() + "/" + path + (issueLine != null ? ("#L" + issueLine) : "");
     }
     return null;
   }
