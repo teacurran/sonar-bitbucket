@@ -47,10 +47,8 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
-import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestFileDetail;
-import org.kohsuke.github.GHPullRequestReviewComment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
@@ -102,22 +100,20 @@ public class PullRequestFacade implements BatchComponent {
 
       BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
 
-      String[] repoSplit = config.repository().split("/");
-
-      Response repoResponse = v2Client.getRepositoryByOwnerRepo(repoSplit[0], repoSplit[1]);
+      Response repoResponse = v2Client.getRepositoryByOwnerRepo(config.repositoryOwner(), config.repository());
       setRepository(repoResponse.readEntity(Repository.class));
 
-      Response pullRequestResponse = v2Client.getPullRequestById(repoSplit[0], repoSplit[1], (long)pullRequestNumber);
+      Response pullRequestResponse = v2Client.getPullRequestById(
+        config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
 
-      Response commentResponse = v2Client.getPullRequestComments(repoSplit[0], repoSplit[1], pullRequest.getId());
-      commentList = commentResponse.readEntity(CommentList.class);
+      loadExistingReviewComments(v2Client);
 
       /*
       BitbucketV2Client tokenClient = ResteasyClient
 
       GitHub github = new GitHubBuilder().withEndpoint(config.endpoint()).withOAuthToken(config.oauth(), config.login()).build();
-      setGhRepo(github.getRepository(config.repository()));
+      setGhRepo(github.getRepository(config.repositoryRaw()));
       setPullRequest(ghRepo.getPullRequest(pullRequestNumber));
       LOG.info("Starting analysis of pull request: " + pullRequest.getHtmlUrl());
       myself = github.getMyself().getLogin();
@@ -190,19 +186,27 @@ public class PullRequestFacade implements BatchComponent {
   /**
    * Load all previous comments made by provided github account.
    */
-  private void loadExistingReviewComments() throws IOException {
+  private void loadExistingReviewComments(BitbucketV2Client v2Client) throws IOException {
+    Response commentResponse = v2Client.getPullRequestComments(
+      config.repositoryOwner(), config.repository(), pullRequest.getId());
+    commentList = commentResponse.readEntity(CommentList.class);
+
     for (Comment comment : commentList.getValues()) {
       if (!myself.equals(comment.getUser().getUsername())) {
         // Ignore comments from other users
         continue;
       }
-      if (!existingReviewCommentsByLocationByFile.containsKey(comment.getFilename())) {
-        existingReviewCommentsByLocationByFile.put(comment.getFilename(), new HashMap<Integer, Comment>());
+      String commentPath = null;
+      if (comment.getInline() != null) {
+        commentPath = comment.getInline().getPath();
+      }
+      if (commentPath != null && !existingReviewCommentsByLocationByFile.containsKey(commentPath)) {
+        existingReviewCommentsByLocationByFile.put(commentPath, new HashMap<Integer, Comment>());
       }
       // By default all previous comments will be marked for deletion
       reviewCommentToBeDeletedById.put(comment.getId(), comment);
-      if (comment.getInline() != null) {
-        existingReviewCommentsByLocationByFile.get(comment.getFilename()).put(comment.getInline().getTo(), comment);
+      if (commentPath != null) {
+        existingReviewCommentsByLocationByFile.get(commentPath).put(comment.getInline().getTo(), comment);
       }
     }
   }
