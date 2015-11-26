@@ -40,6 +40,7 @@ import com.wirelust.bitbucket.client.representations.Comment;
 import com.wirelust.bitbucket.client.representations.CommentList;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.Repository;
+import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -100,6 +101,10 @@ public class PullRequestFacade implements BatchComponent {
 
       BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
 
+      Response userResponse = v2Client.getUser();
+      User user = userResponse.readEntity(User.class);
+      myself = user.getUsername();
+
       Response repoResponse = v2Client.getRepositoryByOwnerRepo(config.repositoryOwner(), config.repository());
       setRepository(repoResponse.readEntity(Repository.class));
 
@@ -110,14 +115,8 @@ public class PullRequestFacade implements BatchComponent {
       loadExistingReviewComments(v2Client);
 
       /*
-      BitbucketV2Client tokenClient = ResteasyClient
-
-      GitHub github = new GitHubBuilder().withEndpoint(config.endpoint()).withOAuthToken(config.oauth(), config.login()).build();
-      setGhRepo(github.getRepository(config.repositoryRaw()));
-      setPullRequest(ghRepo.getPullRequest(pullRequestNumber));
       LOG.info("Starting analysis of pull request: " + pullRequest.getHtmlUrl());
-      myself = github.getMyself().getLogin();
-      loadExistingReviewComments();
+
       patchPositionMappingByFile = mapPatchPositionsToLines(pullRequest);
       */
     } catch (Exception e) {
