@@ -59,12 +59,12 @@ public class BitBucketPluginConfigurationTest {
     settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "https://bitbucket.com/SonarCommunity/sonar-bitbucket.git");
     assertThat(config.repositoryRaw()).isEqualTo("SonarCommunity/sonar-bitbucket");
     assertThat(config.repositoryOwner()).isEqualTo("SonarCommunity");
-    assertThat(config.repository()).isEqualTo("bitbucket-integration");
+    assertThat(config.repository()).isEqualTo("sonar-bitbucket");
 
     settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "http://bitbucket.com/SonarCommunity/sonar-bitbucket.git");
     assertThat(config.repositoryRaw()).isEqualTo("SonarCommunity/sonar-bitbucket");
     assertThat(config.repositoryOwner()).isEqualTo("SonarCommunity");
-    assertThat(config.repository()).isEqualTo("bitbucket-integration");
+    assertThat(config.repository()).isEqualTo("sonar-bitbucket");
 
     settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "SonarCommunity3/bitbucket-integration");
     assertThat(config.repositoryRaw()).isEqualTo("SonarCommunity3/bitbucket-integration");
