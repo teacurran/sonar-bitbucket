@@ -43,6 +43,8 @@ import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import org.apache.commons.io.IOUtils;
+import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
+import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -81,6 +83,9 @@ public class PullRequestFacade implements BatchComponent {
   private File gitBaseDir;
   private String myself;
   private BitbucketV2Client bitbucketClient;
+
+  ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
+
 
   public PullRequestFacade(BitBucketPluginConfiguration config) {
     this.config = config;
@@ -129,7 +134,7 @@ public class PullRequestFacade implements BatchComponent {
     client.register(JacksonConfigurationProvider.class);
 
     ResteasyWebTarget target = client.target(config.endpoint());
-    BitbucketAuthClient authClient = target.proxy(BitbucketAuthClient.class);
+    BitbucketAuthClient authClient = ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
 
     return authClient;
   }
@@ -151,7 +156,7 @@ public class PullRequestFacade implements BatchComponent {
     }
 
     ResteasyWebTarget target = client.target(config.endpoint());
-    BitbucketV2Client bitbucketV2Client = target.proxy(BitbucketV2Client.class);
+    BitbucketV2Client bitbucketV2Client = ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
 
     return bitbucketV2Client;
   }
