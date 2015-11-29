@@ -84,7 +84,7 @@ public class PullRequestFacade implements BatchComponent {
   private String myself;
   private BitbucketV2Client bitbucketClient;
 
-  ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
+  ProxyConfig resteasyProxyConfig = new ProxyConfig(Thread.currentThread().getContextClassLoader(), null, null);
 
 
   public PullRequestFacade(BitBucketPluginConfiguration config) {
