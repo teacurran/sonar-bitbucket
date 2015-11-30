@@ -84,7 +84,7 @@ public class PullRequestFacade implements BatchComponent {
   private String myself;
   private BitbucketV2Client bitbucketClient;
 
-  ProxyConfig resteasyProxyConfig = new ProxyConfig(Thread.currentThread().getContextClassLoader(), null, null);
+  ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
 
 
   public PullRequestFacade(BitBucketPluginConfiguration config) {
@@ -98,13 +98,14 @@ public class PullRequestFacade implements BatchComponent {
     try {
 
       BitbucketAuthClient authClient = getAuthClient();
-      Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
-      LOG.info("received bitbucket response to login:{}", response.getStatus());
+      //Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
+      //LOG.info("received bitbucket response to login:{}", response.getStatus());
 
-      AccessToken accessToken = response.readEntity(AccessToken.class);
-      LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
+      //AccessToken accessToken = response.readEntity(AccessToken.class);
+      //LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
 
-      BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
+      //BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
+      BitbucketV2Client v2Client = getV2Client(null);
 
       Response userResponse = v2Client.getUser();
       User user = userResponse.readEntity(User.class);
