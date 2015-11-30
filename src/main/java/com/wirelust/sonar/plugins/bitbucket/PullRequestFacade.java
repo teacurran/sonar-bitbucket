@@ -48,6 +48,8 @@ import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
 import org.kohsuke.github.GHPullRequest;
@@ -83,6 +85,7 @@ public class PullRequestFacade implements BatchComponent {
   private File gitBaseDir;
   private String myself;
   private BitbucketV2Client bitbucketClient;
+  ResteasyProviderFactory resteasyProviderFactory;
 
   ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
 
@@ -95,17 +98,29 @@ public class PullRequestFacade implements BatchComponent {
     if (findGitBaseDir(projectBaseDir) == null) {
       throw new IllegalStateException("Unable to find Git root directory. Is " + projectBaseDir + " part of a Git repository?");
     }
+
+    resteasyProviderFactory = ResteasyProviderFactory.getInstance();
+    try {
+      ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
+    } catch (IOException e) {
+      LOG.error("unable to register jax-rs providers", e);
+    }
+    //instance.registerProvider(ResteasyJacksonProvider.class);
+
     try {
 
       BitbucketAuthClient authClient = getAuthClient();
-      //Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
-      //LOG.info("received bitbucket response to login:{}", response.getStatus());
+      LOG.info("bitbucket user:{} pass:{}", config.login(), config.password());
+      Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
+      LOG.info("received bitbucket response to login:{}", response.getStatus());
 
-      //AccessToken accessToken = response.readEntity(AccessToken.class);
-      //LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
+      String responseString = response.readEntity(String.class);
+      LOG.info("got response:{}", responseString);
 
-      //BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
-      BitbucketV2Client v2Client = getV2Client(null);
+      AccessToken accessToken = response.readEntity(AccessToken.class);
+      LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
+
+      BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
 
       Response userResponse = v2Client.getUser();
       User user = userResponse.readEntity(User.class);
@@ -131,7 +146,10 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public BitbucketAuthClient getAuthClient() {
-    ResteasyClient client = new ResteasyClientBuilder().build();
+    ResteasyClient client = new ResteasyClientBuilder()
+      .providerFactory(resteasyProviderFactory)
+      .build();
+
     client.register(JacksonConfigurationProvider.class);
 
     ResteasyWebTarget target = client.target(config.endpoint());
@@ -142,7 +160,10 @@ public class PullRequestFacade implements BatchComponent {
 
 
   public BitbucketV2Client getV2Client(final String authToken) {
-    ResteasyClient client = new ResteasyClientBuilder().build();
+    ResteasyClient client = new ResteasyClientBuilder()
+      .providerFactory(resteasyProviderFactory)
+      .build();
+
     client.register(JacksonConfigurationProvider.class);
 
     if (authToken != null) {
