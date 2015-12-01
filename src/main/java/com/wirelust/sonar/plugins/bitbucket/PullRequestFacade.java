@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,9 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.xml.bind.DatatypeConverter;
 
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
@@ -89,7 +92,6 @@ public class PullRequestFacade implements BatchComponent {
 
   ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
 
-
   public PullRequestFacade(BitBucketPluginConfiguration config) {
     this.config = config;
   }
@@ -99,26 +101,27 @@ public class PullRequestFacade implements BatchComponent {
       throw new IllegalStateException("Unable to find Git root directory. Is " + projectBaseDir + " part of a Git repository?");
     }
 
+    // We need to register Resteasy providers ourselves to make sure they are bound to the correct classloader
     resteasyProviderFactory = ResteasyProviderFactory.getInstance();
     try {
       ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
     } catch (IOException e) {
       LOG.error("unable to register jax-rs providers", e);
     }
-    //instance.registerProvider(ResteasyJacksonProvider.class);
 
     try {
 
       BitbucketAuthClient authClient = getAuthClient();
-      LOG.info("bitbucket user:{} pass:{}", config.login(), config.password());
       Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
       LOG.info("received bitbucket response to login:{}", response.getStatus());
 
-      String responseString = response.readEntity(String.class);
-      LOG.info("got response:{}", responseString);
+      if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+        LOG.error("error logging into bitbucket, response received:{}", response.getStatus());
+        return;
+      }
 
       AccessToken accessToken = response.readEntity(AccessToken.class);
-      LOG.info("bitbucket Access token:{}", accessToken.getAccessToken());
+      LOG.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
       BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
 
@@ -133,13 +136,12 @@ public class PullRequestFacade implements BatchComponent {
         config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
 
+      LOG.info("Starting analysis of pull request: " + pullRequest.getId());
+
       loadExistingReviewComments(v2Client);
 
-      /*
-      LOG.info("Starting analysis of pull request: " + pullRequest.getHtmlUrl());
-
       patchPositionMappingByFile = mapPatchPositionsToLines(pullRequest);
-      */
+
     } catch (Exception e) {
       throw new IllegalStateException("Unable to perform GitHub WS operation", e);
     }
@@ -152,7 +154,26 @@ public class PullRequestFacade implements BatchComponent {
 
     client.register(JacksonConfigurationProvider.class);
 
-    ResteasyWebTarget target = client.target(config.endpoint());
+    client.register(new ClientRequestFilter() {
+      @Override
+      public void filter(ClientRequestContext clientRequestContext) throws IOException {
+        MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
+
+        String basicAuthentication;
+        String token = config.clientId() + ":" + config.clientSecret();
+        try {
+            basicAuthentication =  "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalStateException("Cannot encode with UTF-8", ex);
+        }
+
+        LOG.debug("basic auth:{}", basicAuthentication);
+
+        headers.add("Authorization", basicAuthentication);
+      }
+    });
+
+    ResteasyWebTarget target = client.target(config.tokenEndpoint());
     BitbucketAuthClient authClient = ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
 
     return authClient;
@@ -242,17 +263,20 @@ public class PullRequestFacade implements BatchComponent {
    * So we have to iterate over each patch and compute corresponding file line in order to later map issues to the correct position.
    * @return Map File path -> Line -> Position
    */
-  private static Map<String, Map<Integer, Integer>> mapPatchPositionsToLines(GHPullRequest pr) throws IOException {
+  private static Map<String, Map<Integer, Integer>> mapPatchPositionsToLines(PullRequest pr) throws IOException {
     Map<String, Map<Integer, Integer>> patchPositionMappingByFile = new HashMap<>();
-    for (GHPullRequestFileDetail file : pr.listFiles()) {
-      Map<Integer, Integer> patchLocationMapping = new HashMap<>();
-      patchPositionMappingByFile.put(file.getFilename(), patchLocationMapping);
-      String patch = file.getPatch();
-      if (patch == null) {
-        continue;
-      }
-      processPatch(patchLocationMapping, patch);
-    }
+
+    // TODO: figure out how to get this info from bitbucket
+//    for (GHPullRequestFileDetail file : pr.listFiles()) {
+//      Map<Integer, Integer> patchLocationMapping = new HashMap<>();
+//      patchPositionMappingByFile.put(file.getFilename(), patchLocationMapping);
+//      String patch = file.getPatch();
+//      if (patch == null) {
+//        continue;
+//      }
+//      processPatch(patchLocationMapping, patch);
+//    }
+
     return patchPositionMappingByFile;
   }
 

@@ -121,6 +121,16 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     return settings.getString(BitBucketPlugin.BITBUCKET_LOGIN);
   }
 
+  @CheckForNull
+  public String clientId() {
+    return settings.getString(BitBucketPlugin.BITBUCKET_CLIENT_ID);
+  }
+
+  @CheckForNull
+  public String clientSecret() {
+    return settings.getString(BitBucketPlugin.BITBUCKET_CLIENT_SECRET);
+  }
+
   public boolean isEnabled() {
     return settings.hasKey(BitBucketPlugin.BITBUCKET_PULL_REQUEST);
   }

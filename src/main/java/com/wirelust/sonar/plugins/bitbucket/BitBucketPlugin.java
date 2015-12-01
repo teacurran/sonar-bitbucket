@@ -38,7 +38,7 @@ import org.sonar.api.SonarPlugin;
     key = BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT,
     name = "BitBucket OAuth Token Endpoint",
     description = "BitBucket OAuth Token Endpoint",
-    defaultValue = "https://bitbucket.org/site/oauth2/access_token",
+    defaultValue = "https://bitbucket.org/site",
     global = true),
   @Property(
     key = BitBucketPlugin.BITBUCKET_LOGIN,
@@ -68,6 +68,8 @@ import org.sonar.api.SonarPlugin;
 })
 public class BitBucketPlugin extends SonarPlugin {
 
+  public static final String BITBUCKET_CLIENT_ID = "sonar.bitbucket.client.id";
+  public static final String BITBUCKET_CLIENT_SECRET = "sonar.bitbucket.client.secret";
   public static final String BITBUCKET_ENDPOINT = "sonar.bitbucket.endpoint";
   public static final String BITBUCKET_TOKEN_ENDPOINT = "sonar.bitbucket.token.endpoint";
   public static final String BITBUCKET_LOGIN = "sonar.bitbucket.login";
