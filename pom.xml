@@ -81,6 +81,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <dependency>
+      <groupId>jp.skypencil.java-diff-utils</groupId>
+      <artifactId>diffutils</artifactId>
+      <version>1.5.0</version>
+      <scope>compile</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.codehaus.sonar</groupId>
