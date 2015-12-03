@@ -1,0 +1,410 @@
+diff --git a/it/it-tests/src/test/java/it/Category3Suite.java b/it/it-tests/src/test/java/it/Category3Suite.java
+index fe0fe10..61bfc18 100644
+--- a/it/it-tests/src/test/java/it/Category3Suite.java
++++ b/it/it-tests/src/test/java/it/Category3Suite.java
+@@ -6,18 +6,7 @@
+ package it;
+
+ import com.sonar.orchestrator.Orchestrator;
+-import it.analysis.BatchTest;
+-import it.analysis.ExtensionLifecycleTest;
+-import it.analysis.IssueJsonReportTest;
+-import it.analysis.IssuesModeTest;
+-import it.analysis.LinksTest;
+-import it.analysis.MavenTest;
+-import it.analysis.MultiLanguageTest;
+-import it.analysis.ProjectBuilderTest;
+-import it.analysis.ProjectExclusionsTest;
+-import it.analysis.ProjectProvisioningTest;
+-import it.analysis.SettingsEncryptionTest;
+-import it.analysis.TempFolderTest;
++import it.analysis.*;
+ import org.junit.ClassRule;
+ import org.junit.runner.RunWith;
+ import org.junit.runners.Suite;
+@@ -39,7 +28,8 @@
+   ProjectProvisioningTest.class,
+   BatchTest.class,
+   IssuesModeTest.class,
+-  SettingsEncryptionTest.class
++  SettingsEncryptionTest.class,
++  ReportDumpTest.class
+ })
+ public class Category3Suite {
+
+diff --git a/it/it-tests/src/test/java/it/analysis/BatchTest.java b/it/it-tests/src/test/java/it/analysis/BatchTest.java
+index e558ca8..1485025 100644
+--- a/it/it-tests/src/test/java/it/analysis/BatchTest.java
++++ b/it/it-tests/src/test/java/it/analysis/BatchTest.java
+@@ -11,16 +11,8 @@
+ import com.sonar.orchestrator.build.SonarRunner;
+ import com.sonar.orchestrator.locator.FileLocation;
+ import it.Category3Suite;
+-import java.io.File;
+-import java.io.IOException;
+-import java.util.Date;
+ import org.apache.commons.io.FileUtils;
+-import org.junit.Assume;
+-import org.junit.Before;
+-import org.junit.ClassRule;
+-import org.junit.Ignore;
+-import org.junit.Rule;
+-import org.junit.Test;
++import org.junit.*;
+ import org.junit.rules.ExpectedException;
+ import org.junit.rules.TemporaryFolder;
+ import org.sonar.wsclient.Sonar;
+@@ -30,6 +22,10 @@
+ import org.sonar.wsclient.services.ResourceQuery;
+ import util.ItUtils;
+
++import java.io.File;
++import java.io.IOException;
++import java.util.Date;
++
+ import static org.assertj.core.api.Assertions.assertThat;
+
+ public class BatchTest {
+@@ -49,7 +45,7 @@ public void deleteData() {
+     orchestrator.getServer().restoreProfile(FileLocation.ofClasspath("/analysis/BatchTest/one-issue-per-line.xml"));
+   }
+
+-  /**
++  /**
+    * SONAR-3718
+    */
+   @Test
+@@ -313,7 +309,7 @@ public void batch_should_cache_plugin_jars() throws IOException {
+
+     File cache = new File(userHome, "cache");
+     assertThat(cache).exists().isDirectory();
+-    int cachedFiles = FileUtils.listFiles(cache, new String[] {"jar"}, true).size();
++    int cachedFiles = FileUtils.listFiles(cache, new String[]{"jar"}, true).size();
+     assertThat(cachedFiles).isGreaterThan(5);
+     assertThat(result.getLogs()).contains("User cache: " + cache.getAbsolutePath());
+     assertThat(result.getLogs()).contains("Download sonar-xoo-plugin-");
+@@ -354,11 +350,13 @@ public void should_display_project_url_after_analysis() throws IOException {
+
+     assertThat(result.getLogs()).contains("/dashboard/index/com.sonarsource.it.samples:multi-modules-sample:mybranch");
+
+-    orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.core.serverBaseURL", "http://foo:123/sonar"));
+-
+-    result = scan("shared/xoo-multi-modules-sample");
+-
+-    assertThat(result.getLogs()).contains("http://foo:123/sonar/dashboard/index/com.sonarsource.it.samples:multi-modules-sample");
++    try {
++      orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.core.serverBaseURL", "http://foo:123/sonar"));
++      result = scan("shared/xoo-multi-modules-sample");
++      assertThat(result.getLogs()).contains("http://foo:123/sonar/dashboard/index/com.sonarsource.it.samples:multi-modules-sample");
++    } finally {
++      orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.core.serverBaseURL", null));
++    }
+   }
+
+   /**
+diff --git a/it/it-tests/src/test/java/it/analysis/ReportDumpTest.java b/it/it-tests/src/test/java/it/analysis/ReportDumpTest.java
+new file mode 100644
+index 0000000..91129f2
+--- /dev/null
++++ b/it/it-tests/src/test/java/it/analysis/ReportDumpTest.java
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (C) 2009-2014 SonarSource SA
++ * All rights reserved
++ * mailto:contact AT sonarsource DOT com
++ */
++package it.analysis;
++
++import com.sonar.orchestrator.Orchestrator;
++import com.sonar.orchestrator.build.SonarRunner;
++import com.squareup.okhttp.HttpUrl;
++import com.squareup.okhttp.OkHttpClient;
++import com.squareup.okhttp.Request;
++import com.squareup.okhttp.Response;
++import it.Category3Suite;
++import org.apache.commons.io.FileUtils;
++import org.junit.ClassRule;
++import org.junit.Test;
++import util.ItUtils;
++
++import java.io.File;
++import java.io.IOException;
++import java.io.StringReader;
++import java.nio.charset.StandardCharsets;
++import java.util.Properties;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++public class ReportDumpTest {
++
++  @ClassRule
++  public static Orchestrator orchestrator = Category3Suite.ORCHESTRATOR;
++
++  /**
++   * SONAR-6905
++   */
++  @Test
++  public void dump_metadata_of_uploaded_report() throws Exception {
++    File projectDir = ItUtils.projectDir("shared/xoo-sample");
++    orchestrator.executeBuild(SonarRunner.create(projectDir, "sonar.projectKey", "dump_metadata_of_uploaded_report", "sonar.projectName", "dump_metadata_of_uploaded_report"));
++
++    File metadata = new File(projectDir, ".sonar/report-task.txt");
++    assertThat(metadata).exists().isFile();
++
++    // verify properties
++    Properties props = new Properties();
++    props.load(new StringReader(FileUtils.readFileToString(metadata, StandardCharsets.UTF_8)));
++    assertThat(props).hasSize(4);
++    assertThat(props.getProperty("projectKey")).isEqualTo("dump_metadata_of_uploaded_report");
++    assertThat(props.getProperty("ceTaskId")).isNotEmpty();
++    verifyUrl(props.getProperty("dashboardUrl"));
++    verifyUrl(props.getProperty("ceTaskUrl"));
++  }
++
++  private void verifyUrl(String url) throws IOException {
++    HttpUrl httpUrl = HttpUrl.parse(url);
++    Request request = new Request.Builder()
++      .url(httpUrl)
++      .get()
++      .build();
++    Response response = new OkHttpClient().newCall(request).execute();
++    assertThat(response.isSuccessful()).as(httpUrl.toString()).isTrue();
++    assertThat(response.body().string()).as(httpUrl.toString()).isNotEmpty();
++  }
++
++}
+diff --git a/pom.xml b/pom.xml
+index 598fbdb..ebc5622 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -1126,6 +1126,16 @@
+         <artifactId>tomcat-embed-logging-juli</artifactId>
+         <version>${tomcat.version}</version>
+       </dependency>
++      <dependency>
++        <groupId>com.squareup.okhttp</groupId>
++        <artifactId>okhttp</artifactId>
++        <version>${okhttp.version}</version>
++      </dependency>
++      <dependency>
++        <groupId>com.squareup.okhttp</groupId>
++        <artifactId>mockwebserver</artifactId>
++        <version>${okhttp.version}</version>
++      </dependency>
+
+       <!-- Using scope=provided to exclude from all transitive dependencies -->
+       <dependency>
+diff --git a/sonar-batch/src/main/java/org/sonar/batch/report/ReportPublisher.java b/sonar-batch/src/main/java/org/sonar/batch/report/ReportPublisher.java
+index 6f96639..2da734f 100644
+--- a/sonar-batch/src/main/java/org/sonar/batch/report/ReportPublisher.java
++++ b/sonar-batch/src/main/java/org/sonar/batch/report/ReportPublisher.java
+@@ -23,17 +23,7 @@
+ import com.google.common.base.Throwables;
+ import com.google.common.io.Files;
+ import com.squareup.okhttp.HttpUrl;
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.Writer;
+-import java.net.URL;
+-import java.nio.charset.StandardCharsets;
+-import java.util.LinkedHashMap;
+-import java.util.Map;
+-import javax.annotation.Nullable;
+ import org.apache.commons.io.FileUtils;
+-import org.apache.commons.lang.StringUtils;
+ import org.picocontainer.Startable;
+ import org.sonar.api.CoreProperties;
+ import org.sonar.api.batch.BatchSide;
+@@ -43,7 +33,6 @@
+ import org.sonar.api.utils.ZipUtils;
+ import org.sonar.api.utils.log.Logger;
+ import org.sonar.api.utils.log.Loggers;
+-import org.sonar.api.utils.text.JsonWriter;
+ import org.sonar.batch.analysis.DefaultAnalysisMode;
+ import org.sonar.batch.bootstrap.BatchWsClient;
+ import org.sonar.batch.protocol.output.BatchReportWriter;
+@@ -53,7 +42,15 @@
+ import org.sonarqube.ws.client.PostRequest;
+ import org.sonarqube.ws.client.WsResponse;
+
+-import static org.apache.commons.lang.StringUtils.defaultIfBlank;
++import javax.annotation.Nullable;
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.Writer;
++import java.net.URL;
++import java.nio.charset.StandardCharsets;
++import java.util.LinkedHashMap;
++import java.util.Map;
+
+ @BatchSide
+ public class ReportPublisher implements Startable {
+@@ -62,7 +59,7 @@
+
+   public static final String KEEP_REPORT_PROP_KEY = "sonar.batch.keepReport";
+   public static final String VERBOSE_KEY = "sonar.verbose";
+-  public static final String METADATA_DUMP_FILENAME = "analysis-details.json";
++  public static final String METADATA_DUMP_FILENAME = "report-task.txt";
+
+   private final Settings settings;
+   private final BatchWsClient wsClient;
+@@ -76,7 +73,7 @@
+   private BatchReportWriter writer;
+
+   public ReportPublisher(Settings settings, BatchWsClient wsClient, AnalysisContextReportPublisher contextPublisher,
+-    ImmutableProjectReactor projectReactor, DefaultAnalysisMode analysisMode, TempFolder temp, ReportPublisherStep[] publishers) {
++                         ImmutableProjectReactor projectReactor, DefaultAnalysisMode analysisMode, TempFolder temp, ReportPublisherStep[] publishers) {
+     this.settings = settings;
+     this.wsClient = wsClient;
+     this.contextPublisher = contextPublisher;
+@@ -129,13 +126,13 @@ private File generateReportFile() {
+         publisher.publish(writer);
+       }
+       long stopTime = System.currentTimeMillis();
+-      LOG.info("Analysis report generated in " + (stopTime - startTime) + "ms, dir size=" + FileUtils.byteCountToDisplaySize(FileUtils.sizeOfDirectory(reportDir)));
++      LOG.info("Analysis report generated in {}ms, dir size={}", stopTime - startTime, FileUtils.byteCountToDisplaySize(FileUtils.sizeOfDirectory(reportDir)));
+
+       startTime = System.currentTimeMillis();
+       File reportZip = temp.newFile("batch-report", ".zip");
+       ZipUtils.zipDir(reportDir, reportZip);
+       stopTime = System.currentTimeMillis();
+-      LOG.info("Analysis reports compressed in " + (stopTime - startTime) + "ms, zip size=" + FileUtils.byteCountToDisplaySize(FileUtils.sizeOf(reportZip)));
++      LOG.info("Analysis reports compressed in {}ms, zip size={}", stopTime - startTime, FileUtils.byteCountToDisplaySize(FileUtils.sizeOf(reportZip)));
+       return reportZip;
+     } catch (IOException e) {
+       throw new IllegalStateException("Unable to prepare analysis report", e);
+@@ -202,12 +199,12 @@ void logSuccess(@Nullable String taskId) {
+   private void dumpMetadata(Map<String, String> metadata) {
+     File file = new File(projectReactor.getRoot().getWorkDir(), METADATA_DUMP_FILENAME);
+     try (Writer output = Files.newWriter(file, StandardCharsets.UTF_8)) {
+-      JsonWriter json = JsonWriter.of(output);
+-      json.beginObject();
+       for (Map.Entry<String, String> entry : metadata.entrySet()) {
+-        json.prop(entry.getKey(), entry.getValue());
++        output.write(entry.getKey());
++        output.write("=");
++        output.write(entry.getValue());
++        output.write("\n");
+       }
+-      json.endObject();
+
+       LOG.debug("Report metadata written to {}", file);
+     } catch (IOException e) {
+@@ -220,10 +217,12 @@ private void dumpMetadata(Map<String, String> metadata) {
+    * See https://jira.sonarsource.com/browse/SONAR-4239
+    */
+   private String publicUrl() {
+-    String publicUrl = settings.getString(CoreProperties.SERVER_BASE_URL);
+-    if (StringUtils.isBlank(publicUrl)) {
+-      return wsClient.baseUrl();
++    String baseUrl = settings.getString(CoreProperties.SERVER_BASE_URL);
++    if (baseUrl.equals(settings.getDefaultValue(CoreProperties.SERVER_BASE_URL))) {
++      // crap workaround for https://jira.sonarsource.com/browse/SONAR-7109
++      // If server base URL was not configured in Sonar server then is is better to take URL configured on batch side
++      baseUrl = wsClient.baseUrl();
+     }
+-    return publicUrl.replaceAll("(/)+$", "") + "/";
++    return baseUrl.replaceAll("(/)+$", "") + "/";
+   }
+ }
+diff --git a/sonar-batch/src/test/java/org/sonar/batch/report/ReportPublisherTest.java b/sonar-batch/src/test/java/org/sonar/batch/report/ReportPublisherTest.java
+index ebc2e97..576a2dc 100644
+--- a/sonar-batch/src/test/java/org/sonar/batch/report/ReportPublisherTest.java
++++ b/sonar-batch/src/test/java/org/sonar/batch/report/ReportPublisherTest.java
+@@ -30,6 +30,7 @@
+ import org.mockito.Mockito;
+ import org.sonar.api.CoreProperties;
+ import org.sonar.api.batch.bootstrap.ProjectDefinition;
++import org.sonar.api.config.PropertyDefinitions;
+ import org.sonar.api.config.Settings;
+ import org.sonar.api.utils.TempFolder;
+ import org.sonar.api.utils.log.LogTester;
+@@ -37,7 +38,7 @@
+ import org.sonar.batch.analysis.DefaultAnalysisMode;
+ import org.sonar.batch.bootstrap.BatchWsClient;
+ import org.sonar.batch.scan.ImmutableProjectReactor;
+-import org.sonar.test.JsonAssert;
++import org.sonar.core.config.CorePropertyDefinitions;
+
+ import static org.apache.commons.io.FileUtils.readFileToString;
+ import static org.assertj.core.api.Assertions.assertThat;
+@@ -53,7 +54,7 @@
+   public TemporaryFolder temp = new TemporaryFolder();
+
+   DefaultAnalysisMode mode = mock(DefaultAnalysisMode.class);
+-  Settings settings = new Settings();
++  Settings settings = new Settings(new PropertyDefinitions(CorePropertyDefinitions.all()));
+   BatchWsClient wsClient = mock(BatchWsClient.class, Mockito.RETURNS_DEEP_STUBS);
+   ImmutableProjectReactor reactor = mock(ImmutableProjectReactor.class);
+   ProjectDefinition root;
+@@ -77,13 +78,12 @@ public void log_and_dump_information_about_report_uploading() throws IOException
+       .contains("Note that you will be able to access the updated dashboard once the server has processed the submitted analysis report")
+       .contains("More about the report processing at https://localhost/api/ce/task?id=TASK-123");
+
+-    File detailsFile = new File(temp.getRoot(), "analysis-details.json");
+-    JsonAssert.assertJson(readFileToString(detailsFile)).isSimilarTo("{" +
+-      "\"projectKey\": \"struts\"," +
+-      "\"dashboardUrl\": \"https://localhost/dashboard/index/struts\"," +
+-      "\"ceTaskId\": \"TASK-123\"," +
+-      "\"ceTaskUrl\": \"https://localhost/api/ce/task?id=TASK-123\"" +
+-      "}"
++    File detailsFile = new File(temp.getRoot(), "report-task.txt");
++    assertThat(readFileToString(detailsFile)).isEqualTo(
++      "projectKey=struts\n" +
++      "dashboardUrl=https://localhost/dashboard/index/struts\n" +
++      "ceTaskId=TASK-123\n" +
++      "ceTaskUrl=https://localhost/api/ce/task?id=TASK-123\n"
+       );
+   }
+
+@@ -98,13 +98,12 @@ public void log_public_url_if_defined() throws IOException {
+       .contains("ANALYSIS SUCCESSFUL, you can browse https://publicserver/sonarqube/dashboard/index/struts")
+       .contains("More about the report processing at https://publicserver/sonarqube/api/ce/task?id=TASK-123");
+
+-    File detailsFile = new File(temp.getRoot(), "analysis-details.json");
+-    JsonAssert.assertJson(readFileToString(detailsFile)).isSimilarTo("{" +
+-      "\"projectKey\": \"struts\"," +
+-      "\"dashboardUrl\": \"https://publicserver/sonarqube/dashboard/index/struts\"," +
+-      "\"ceTaskId\": \"TASK-123\"," +
+-      "\"ceTaskUrl\": \"https://publicserver/sonarqube/api/ce/task?id=TASK-123\"" +
+-      "}"
++    File detailsFile = new File(temp.getRoot(), "report-task.txt");
++    assertThat(readFileToString(detailsFile)).isEqualTo(
++      "projectKey=struts\n" +
++      "dashboardUrl=https://publicserver/sonarqube/dashboard/index/struts\n" +
++      "ceTaskId=TASK-123\n" +
++      "ceTaskUrl=https://publicserver/sonarqube/api/ce/task?id=TASK-123\n"
+     );
+   }
+
+@@ -118,7 +117,7 @@ public void log_but_not_dump_information_when_report_is_not_uploaded() {
+       .contains("ANALYSIS SUCCESSFUL")
+       .doesNotContain("dashboard/index");
+
+-    File detailsFile = new File(temp.getRoot(), "analysis-details.json");
++    File detailsFile = new File(temp.getRoot(), ReportPublisher.METADATA_DUMP_FILENAME);
+     assertThat(detailsFile).doesNotExist();
+   }
+
+diff --git a/sonar-ws/pom.xml b/sonar-ws/pom.xml
+index 457bfa7..4374b54 100644
+--- a/sonar-ws/pom.xml
++++ b/sonar-ws/pom.xml
+@@ -30,7 +30,6 @@
+     <dependency>
+       <groupId>com.squareup.okhttp</groupId>
+       <artifactId>okhttp</artifactId>
+-      <version>${okhttp.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>com.google.code.findbugs</groupId>
+@@ -52,7 +51,6 @@
+     <dependency>
+       <groupId>com.squareup.okhttp</groupId>
+       <artifactId>mockwebserver</artifactId>
+-      <version>${okhttp.version}</version>
+       <scope>test</scope>
+     </dependency>
+   </dependencies>

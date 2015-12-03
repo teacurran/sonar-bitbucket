@@ -30,9 +30,14 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.PagedIterable;
 import org.mockito.Mockito;
 import org.sonar.api.batch.fs.InputPath;
+import org.wickedsource.diffparser.api.DiffParser;
+import org.wickedsource.diffparser.api.UnifiedDiffParser;
+import org.wickedsource.diffparser.api.model.Diff;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -132,4 +137,16 @@ public class PullRequestFacadeTest {
     when(ghCommitStatusGHPRHContext.getContext()).thenReturn(PullRequestFacade.COMMIT_CONTEXT);
     assertThat(facade.getCommitStatusForContext(pr, PullRequestFacade.COMMIT_CONTEXT).getContext()).isEqualTo(PullRequestFacade.COMMIT_CONTEXT);
   }
+
+  @Test
+  public void testLoadingUnifiedDiff() {
+
+    InputStream diffStream = getClass().getClassLoader().getResourceAsStream("unified_diff.txt");
+
+    DiffParser parser = new UnifiedDiffParser();
+    List<Diff> diff = parser.parse(diffStream);
+
+    assertThat(diff.size() == 5);
+  }
+
 }
