@@ -8,4 +8,4 @@ I have started with the source for SonarQube GitHub Plugin and will be changing 
 
 # This plugin does not currently work! Don't even try to use it.
 
-[![Analytics](image::https://ga-beacon.appspot.com/UA-8328658-10/sonar-bitbucket-plugin/README.md)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-8328658-10/sonar-bitbucket-plugin/README.md)](https://github.com/igrigorik/ga-beacon)
