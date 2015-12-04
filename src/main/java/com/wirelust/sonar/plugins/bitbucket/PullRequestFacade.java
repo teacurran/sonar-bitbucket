@@ -19,16 +19,16 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.ws.rs.client.ClientRequestContext;
@@ -37,6 +37,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.DatatypeConverter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.Comment;
@@ -45,18 +46,15 @@ import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
-import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
 import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
 import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHPullRequestFileDetail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
@@ -64,6 +62,11 @@ import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
 import org.sonar.api.scan.filesystem.PathResolver;
+import org.wickedsource.diffparser.api.DiffParser;
+import org.wickedsource.diffparser.api.UnifiedDiffParser;
+import org.wickedsource.diffparser.api.model.Diff;
+import org.wickedsource.diffparser.api.model.Hunk;
+import org.wickedsource.diffparser.api.model.Line;
 
 /**
  * Facade for all WS interaction with GitHub.
@@ -77,12 +80,13 @@ public class PullRequestFacade implements BatchComponent {
   static final String COMMIT_CONTEXT = "sonarqube";
 
   private final BitBucketPluginConfiguration config;
-  private Map<String, Map<Integer, Integer>> patchPositionMappingByFile;
+  private Map<String, List<Integer>> patchPositionMappingByFile;
   private Map<String, Map<Integer, Comment>> existingReviewCommentsByLocationByFile = new HashMap<>();
 
   private Repository repository;
   private PullRequest pullRequest;
   private CommentList commentList;
+  private List<Diff> diffList;
 
   private Map<Long, Comment> reviewCommentToBeDeletedById = new HashMap<>();
   private File gitBaseDir;
@@ -139,8 +143,7 @@ public class PullRequestFacade implements BatchComponent {
       LOG.info("Starting analysis of pull request: " + pullRequest.getId());
 
       loadExistingReviewComments(v2Client);
-
-      patchPositionMappingByFile = mapPatchPositionsToLines(pullRequest);
+      loadPatch(v2Client, pullRequest);
 
     } catch (Exception e) {
       throw new IllegalStateException("Unable to perform GitHub WS operation", e);
@@ -230,6 +233,39 @@ public class PullRequestFacade implements BatchComponent {
     this.gitBaseDir = gitBaseDir;
   }
 
+  private void loadPatch(BitbucketV2Client v2Client, PullRequest pullRequest) throws IOException {
+
+    Response response = v2Client.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
+    String diffString = response.readEntity(String.class);
+
+    InputStream diffStream = new ByteArrayInputStream(diffString.getBytes(StandardCharsets.UTF_8));
+
+    DiffParser parser = new UnifiedDiffParser();
+    diffList = parser.parse(diffStream);
+
+    patchPositionMappingByFile = new HashMap<>();
+
+    for (Diff diff : diffList) {
+      List<Integer> patchLocationMapping = new ArrayList<>();
+      patchPositionMappingByFile.put(diff.getToFileName(), patchLocationMapping);
+
+      if (diff.getHunks() == null) {
+        continue;
+      }
+
+      int currentLine;
+      for (Hunk hunk : diff.getHunks()) {
+        currentLine = hunk.getToFileRange().getLineStart();
+        for (Line line : hunk.getLines()) {
+          if (line.getLineType().equals(Line.LineType.TO) || line.getLineType().equals(Line.LineType.NEUTRAL)) {
+            patchLocationMapping.add(currentLine);
+          }
+          currentLine++;
+        }
+      }
+    }
+  }
+
   /**
    * Load all previous comments made by provided github account.
    */
@@ -258,54 +294,6 @@ public class PullRequestFacade implements BatchComponent {
     }
   }
 
-  /**
-   * GitHub expect review comments to be added on "patch lines" (aka position) but not on file lines.
-   * So we have to iterate over each patch and compute corresponding file line in order to later map issues to the correct position.
-   * @return Map File path -> Line -> Position
-   */
-  private static Map<String, Map<Integer, Integer>> mapPatchPositionsToLines(PullRequest pr) throws IOException {
-    Map<String, Map<Integer, Integer>> patchPositionMappingByFile = new HashMap<>();
-
-    // TODO: figure out how to get this info from bitbucket
-//    for (GHPullRequestFileDetail file : pr.listFiles()) {
-//      Map<Integer, Integer> patchLocationMapping = new HashMap<>();
-//      patchPositionMappingByFile.put(file.getFilename(), patchLocationMapping);
-//      String patch = file.getPatch();
-//      if (patch == null) {
-//        continue;
-//      }
-//      processPatch(patchLocationMapping, patch);
-//    }
-
-    return patchPositionMappingByFile;
-  }
-
-  @VisibleForTesting
-  static void processPatch(Map<Integer, Integer> patchLocationMapping, String patch) throws IOException {
-    int currentLine = -1;
-    int patchLocation = 0;
-    for (String line : IOUtils.readLines(new StringReader(patch))) {
-      if (line.startsWith("@")) {
-        // http://en.wikipedia.org/wiki/Diff_utility#Unified_format
-        Matcher matcher = Pattern.compile("@@\\p{IsWhite_Space}-[0-9]+(?:,[0-9]+)?\\p{IsWhite_Space}\\+([0-9]+)(?:,[0-9]+)?\\p{IsWhite_Space}@@.*").matcher(line);
-        if (!matcher.matches()) {
-          throw new IllegalStateException("Unable to parse patch line " + line + "\nFull patch: \n" + patch);
-        }
-        currentLine = Integer.parseInt(matcher.group(1));
-      } else if (line.startsWith("-")) {
-        // Skip removed lines
-      } else if (line.startsWith("+") || line.startsWith(" ")) {
-        // Count added and unmodified lines
-        patchLocationMapping.put(currentLine, patchLocation);
-        currentLine++;
-      } else if (line.startsWith("\\")) {
-        // I'm only aware of \ No newline at end of file
-        // Ignore
-      }
-      patchLocation++;
-    }
-  }
-
   private String getPath(InputPath inputPath) {
     return new PathResolver().relativePath(gitBaseDir, inputPath.file());
   }
@@ -321,7 +309,7 @@ public class PullRequestFacade implements BatchComponent {
    * Test if the P/R contains the provided line for the file path (ie this line is "visible" in diff)
    */
   public boolean hasFileLine(InputFile inputFile, int line) {
-    return patchPositionMappingByFile.get(getPath(inputFile)).containsKey(line);
+    return patchPositionMappingByFile.get(getPath(inputFile)).contains(line);
   }
 
   public void createOrUpdateReviewComment(InputFile inputFile, Integer line, String body) {
