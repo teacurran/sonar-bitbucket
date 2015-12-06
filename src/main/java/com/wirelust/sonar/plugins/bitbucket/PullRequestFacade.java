@@ -247,6 +247,7 @@ public class PullRequestFacade implements BatchComponent {
 
     for (Diff diff : diffList) {
       List<Integer> patchLocationMapping = new ArrayList<>();
+      LOG.info("adding file:{}", diff.getToFileName());
       patchPositionMappingByFile.put(diff.getToFileName(), patchLocationMapping);
 
       if (diff.getHunks() == null) {

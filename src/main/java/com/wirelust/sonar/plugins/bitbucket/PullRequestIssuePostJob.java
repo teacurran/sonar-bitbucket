@@ -94,12 +94,18 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
       if (!isNew) {
         continue;
       }
+
+      LOGGER.info("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
+
       Integer issueLine = issue.line();
       InputFile inputFile = inputFileCache.byKey(issue.componentKey());
       if (inputFile != null && !pullRequestFacade.hasFile(inputFile)) {
         // SONARGITUB-13 Ignore issues on files no modified by the P/R
         continue;
       }
+
+      LOGGER.info("processing issue2:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
+
       boolean reportedInline = false;
       if (inputFile != null && issueLine != null) {
         int line = issueLine.intValue();
