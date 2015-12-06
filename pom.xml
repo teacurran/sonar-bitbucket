@@ -85,6 +85,7 @@
       <groupId>org.wickedsource</groupId>
       <artifactId>diffparser</artifactId>
       <version>1.0</version>
+      <scope>compile</scope>
     </dependency>
 
     <dependency>

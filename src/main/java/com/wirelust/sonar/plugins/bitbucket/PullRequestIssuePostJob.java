@@ -21,6 +21,9 @@ package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.CheckProject;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.batch.fs.InputFile;
@@ -32,6 +35,8 @@ import org.sonar.api.resources.Project;
  * Compute comments to be added on the pull request.
  */
 public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, CheckProject {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestIssuePostJob.class);
 
   private final PullRequestFacade pullRequestFacade;
   private final ProjectIssues projectIssues;
@@ -55,6 +60,8 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   @Override
   public void executeOn(Project project, SensorContext context) {
+    LOGGER.info("PullRequestIssuePostJob:{}", project != null ? project.toString() : "null");
+
     GlobalReport report = new GlobalReport(markDownUtils);
     Map<InputFile, Map<Integer, StringBuilder>> commentsToBeAddedByLine = processIssues(report);
 
@@ -63,6 +70,8 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
     pullRequestFacade.deleteOutdatedComments();
 
     pullRequestFacade.removePreviousGlobalComments();
+
+    LOGGER.info("report: hasNewIssues:{}", report.hasNewIssue());
     if (report.hasNewIssue()) {
       pullRequestFacade.addGlobalComment(report.formatForMarkdown());
     }
@@ -76,6 +85,8 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
   }
 
   private Map<InputFile, Map<Integer, StringBuilder>> processIssues(GlobalReport report) {
+
+    LOGGER.info("processing issues");
     Map<InputFile, Map<Integer, StringBuilder>> commentToBeAddedByFileAndByLine = new HashMap<>();
     for (Issue issue : projectIssues.issues()) {
       String severity = issue.severity();

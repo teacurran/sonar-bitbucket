@@ -146,7 +146,7 @@ public class PullRequestFacade implements BatchComponent {
       loadPatch(v2Client, pullRequest);
 
     } catch (Exception e) {
-      throw new IllegalStateException("Unable to perform GitHub WS operation", e);
+      throw new IllegalStateException("Unable to perform Bitbucket WS operation", e);
     }
   }
 
@@ -302,6 +302,7 @@ public class PullRequestFacade implements BatchComponent {
    * Test if the P/R contains the provided file path (ie this file was added/modified/updated)
    */
   public boolean hasFile(InputFile inputFile) {
+    LOG.info("checking for file:{}", inputFile);
     return patchPositionMappingByFile.containsKey(getPath(inputFile));
   }
 
@@ -361,12 +362,19 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public void addGlobalComment(String comment) {
-        // TODO: implement
-//    try {
-//      pullRequest.comment(comment);
-//    } catch (IOException e) {
-//      throw new IllegalStateException("Unable to comment the pull request", e);
-//    }
+    LOG.info("global comment:{}", comment);
+
+    Response response = bitbucketClient.postPullRequestComment(
+      config.repositoryOwner(),
+      config.repository(),
+      pullRequest.getId(),
+      comment);
+
+    if (response.getStatus() < Response.Status.OK.getStatusCode()
+      || response.getStatus() > Response.Status.NO_CONTENT.getStatusCode()) {
+
+      throw new IllegalStateException(String.format("Unable to comment the pull request:%d", pullRequest.getId()));
+    }
   }
 
   public void createOrUpdateSonarQubeStatus(GHCommitState status, String statusDescription) {
