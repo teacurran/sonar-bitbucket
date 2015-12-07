@@ -33,6 +33,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.DatatypeConverter;
@@ -46,11 +47,13 @@ import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
+import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
+import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
 import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
 import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
@@ -184,6 +187,7 @@ public class PullRequestFacade implements BatchComponent {
 
 
   public BitbucketV2Client getV2Client(final String authToken) {
+
     ResteasyClient client = new ResteasyClientBuilder()
       .providerFactory(resteasyProviderFactory)
       .build();
@@ -236,12 +240,21 @@ public class PullRequestFacade implements BatchComponent {
   private void loadPatch(BitbucketV2Client v2Client, PullRequest pullRequest) throws IOException {
 
     Response response = v2Client.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
+    LOG.info("received bitbucket response getPullRequestDiff:{}", response.getStatus());
     String diffString = response.readEntity(String.class);
+
+    MultivaluedMap<String, String> headers = response.getStringHeaders();
+    for (String key : headers.keySet()) {
+      LOG.info("header:{} value:{}", key, headers.get(key));
+    }
+
+    LOG.info("diffString:{}", diffString);
 
     InputStream diffStream = new ByteArrayInputStream(diffString.getBytes(StandardCharsets.UTF_8));
 
     DiffParser parser = new UnifiedDiffParser();
     diffList = parser.parse(diffStream);
+
 
     patchPositionMappingByFile = new HashMap<>();
 
