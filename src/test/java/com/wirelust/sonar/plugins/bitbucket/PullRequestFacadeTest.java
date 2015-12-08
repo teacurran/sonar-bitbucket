@@ -19,7 +19,12 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
-import org.assertj.core.data.MapEntry;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,25 +35,9 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.PagedIterable;
 import org.mockito.Mockito;
 import org.sonar.api.batch.fs.InputPath;
-import org.wickedsource.diffparser.api.DiffParser;
-import org.wickedsource.diffparser.api.UnifiedDiffParser;
-import org.wickedsource.diffparser.api.model.Diff;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 public class PullRequestFacadeTest {
 
@@ -103,15 +92,15 @@ public class PullRequestFacadeTest {
     assertThat(facade.getCommitStatusForContext(pr, PullRequestFacade.COMMIT_CONTEXT).getContext()).isEqualTo(PullRequestFacade.COMMIT_CONTEXT);
   }
 
-  @Test
-  public void testLoadingUnifiedDiff() {
-
-    InputStream diffStream = getClass().getClassLoader().getResourceAsStream("unified_diff.txt");
-
-    DiffParser parser = new UnifiedDiffParser();
-    List<Diff> diff = parser.parse(diffStream);
-
-    assertThat(diff.size() == 5);
-  }
+//  @Test
+//  public void testLoadingUnifiedDiff() {
+//
+//    InputStream diffStream = getClass().getClassLoader().getResourceAsStream("unified_diff.txt");
+//
+//    DiffParser parser = new UnifiedDiffParser();
+//    List<Diff> diff = parser.parse(diffStream);
+//
+//    assertThat(diff.size() == 5);
+//  }
 
 }

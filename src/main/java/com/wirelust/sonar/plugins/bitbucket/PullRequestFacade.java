@@ -33,7 +33,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.DatatypeConverter;
@@ -49,11 +48,14 @@ import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
+import org.eclipse.jgit.diff.Edit;
+import org.eclipse.jgit.patch.FileHeader;
+import org.eclipse.jgit.patch.HunkHeader;
+import org.eclipse.jgit.patch.Patch;
 import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
 import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHCommitStatus;
@@ -65,11 +67,6 @@ import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
 import org.sonar.api.scan.filesystem.PathResolver;
-import org.wickedsource.diffparser.api.DiffParser;
-import org.wickedsource.diffparser.api.UnifiedDiffParser;
-import org.wickedsource.diffparser.api.model.Diff;
-import org.wickedsource.diffparser.api.model.Hunk;
-import org.wickedsource.diffparser.api.model.Line;
 
 /**
  * Facade for all WS interaction with GitHub.
@@ -89,7 +86,6 @@ public class PullRequestFacade implements BatchComponent {
   private Repository repository;
   private PullRequest pullRequest;
   private CommentList commentList;
-  private List<Diff> diffList;
 
   private Map<Long, Comment> reviewCommentToBeDeletedById = new HashMap<>();
   private File gitBaseDir;
@@ -252,26 +248,25 @@ public class PullRequestFacade implements BatchComponent {
 
     InputStream diffStream = new ByteArrayInputStream(diffString.getBytes(StandardCharsets.UTF_8));
 
-    DiffParser parser = new UnifiedDiffParser();
-    diffList = parser.parse(diffStream);
-
+    Patch patch = new Patch();
+    patch.parse(diffStream);
 
     patchPositionMappingByFile = new HashMap<>();
 
-    for (Diff diff : diffList) {
+    for (FileHeader fileHeader : patch.getFiles()) {
       List<Integer> patchLocationMapping = new ArrayList<>();
-      LOG.info("adding file:{}", diff.getToFileName());
-      patchPositionMappingByFile.put(diff.getToFileName(), patchLocationMapping);
+      LOG.info("adding file:{}", fileHeader.getNewPath());
+      patchPositionMappingByFile.put(fileHeader.getNewPath(), patchLocationMapping);
 
-      if (diff.getHunks() == null) {
+      if (fileHeader.getHunks() == null) {
         continue;
       }
 
       int currentLine;
-      for (Hunk hunk : diff.getHunks()) {
-        currentLine = hunk.getToFileRange().getLineStart();
-        for (Line line : hunk.getLines()) {
-          if (line.getLineType().equals(Line.LineType.TO) || line.getLineType().equals(Line.LineType.NEUTRAL)) {
+      for (HunkHeader hunk : fileHeader.getHunks()) {
+        currentLine = hunk.getNewStartLine();
+        for (Edit edit : hunk.toEditList()) {
+          if (edit.getType().equals(Edit.Type.INSERT) || edit.getType().equals(Edit.Type.REPLACE)) {
             patchLocationMapping.add(currentLine);
           }
           currentLine++;
