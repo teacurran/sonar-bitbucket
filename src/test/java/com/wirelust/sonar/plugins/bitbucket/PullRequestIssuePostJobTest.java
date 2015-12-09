@@ -75,7 +75,6 @@ public class PullRequestIssuePostJobTest {
   public void testPullRequestAnalysisNoIssue() {
     when(issues.issues()).thenReturn(Arrays.<Issue>asList());
     pullRequestIssuePostJob.executeOn(null, null);
-    verify(pullRequestFacade).removePreviousGlobalComments();
     verify(pullRequestFacade, never()).addGlobalComment(anyString());
     verify(pullRequestFacade).createOrUpdateSonarQubeStatus(GHCommitState.SUCCESS, "SonarQube reported no issues");
   }
@@ -151,7 +150,6 @@ public class PullRequestIssuePostJobTest {
     when(pullRequestFacade.hasFileLine(inputFile1, 1)).thenReturn(true);
 
     pullRequestIssuePostJob.executeOn(null, null);
-    verify(pullRequestFacade).removePreviousGlobalComments();
     verify(pullRequestFacade).addGlobalComment(contains("SonarQube analysis reported 5 issues:"));
     verify(pullRequestFacade)
       .addGlobalComment(contains("* ![BLOCKER](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-blocker.png) 5 blocker"));

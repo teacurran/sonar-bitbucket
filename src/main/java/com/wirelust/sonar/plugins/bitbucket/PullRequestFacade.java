@@ -348,26 +348,15 @@ public class PullRequestFacade implements BatchComponent {
 
   public void deleteOutdatedComments() {
     for (Comment reviewToDelete : reviewCommentToBeDeletedById.values()) {
-        // TODO: implement
-//      try {
-//         reviewToDelete.delete();
-//      } catch (IOException e) {
-//        throw new IllegalStateException("Unable to delete review comment with id " + reviewToDelete.getId(), e);
-//      }
-    }
-  }
+      Response response = bitbucketClient.deletePullRequestComment(
+        config.repositoryOwner(), config.repository(), pullRequest.getId(), reviewToDelete.getId());
 
-  public void removePreviousGlobalComments() {
-        // TODO: implement
-//    try {
-//      for (GHIssueComment comment : pullRequest.listComments()) {
-//        if (myself.equals(comment.getUser().getLogin())) {
-//          comment.delete();
-//        }
-//      }
-//    } catch (IOException e) {
-//      throw new IllegalStateException("Unable to comment the pull request", e);
-//    }
+      if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+        throw new IllegalStateException(
+          String.format("Unable to delete review comment id:%d, expected:%d, got:%d",
+            reviewToDelete.getId(), 200, response.getStatus()));
+      }
+    }
   }
 
   public void addGlobalComment(String comment) {

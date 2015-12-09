@@ -94,7 +94,7 @@ public class GlobalReportTest {
     String desiredMarkdown = "SonarQube analysis reported 17 issues:\n" +
       "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) 17 major\n" +
       "\nWatch the comments in this conversation to review them." +
-      "\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n" +
+      "\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n" +
       "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:0](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue0)\n"
       +
       "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:1](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue1)\n"
