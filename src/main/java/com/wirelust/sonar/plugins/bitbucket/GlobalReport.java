@@ -46,7 +46,7 @@ public class GlobalReport {
       sb.append("\nWatch the comments in this conversation to review them.");
     }
     if (notReportedOnDiff.length() > 0) {
-      sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n")
+      sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n")
         .append(notReportedOnDiff.toString());
 
       if (notReportedIssueCount >= BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {

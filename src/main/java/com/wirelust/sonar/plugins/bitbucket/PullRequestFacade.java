@@ -126,23 +126,23 @@ public class PullRequestFacade implements BatchComponent {
       AccessToken accessToken = response.readEntity(AccessToken.class);
       LOG.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
-      BitbucketV2Client v2Client = getV2Client(accessToken.getAccessToken());
+      bitbucketClient = getV2Client(accessToken.getAccessToken());
 
-      Response userResponse = v2Client.getUser();
+      Response userResponse = bitbucketClient.getUser();
       User user = userResponse.readEntity(User.class);
       myself = user.getUsername();
 
-      Response repoResponse = v2Client.getRepositoryByOwnerRepo(config.repositoryOwner(), config.repository());
+      Response repoResponse = bitbucketClient.getRepositoryByOwnerRepo(config.repositoryOwner(), config.repository());
       setRepository(repoResponse.readEntity(Repository.class));
 
-      Response pullRequestResponse = v2Client.getPullRequestById(
+      Response pullRequestResponse = bitbucketClient.getPullRequestById(
         config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
 
       LOG.info("Starting analysis of pull request: " + pullRequest.getId());
 
-      loadExistingReviewComments(v2Client);
-      loadPatch(v2Client, pullRequest);
+      loadExistingReviewComments();
+      loadPatch(pullRequest);
 
     } catch (Exception e) {
       throw new IllegalStateException("Unable to perform Bitbucket WS operation", e);
@@ -233,9 +233,9 @@ public class PullRequestFacade implements BatchComponent {
     this.gitBaseDir = gitBaseDir;
   }
 
-  private void loadPatch(BitbucketV2Client v2Client, PullRequest pullRequest) throws IOException {
+  private void loadPatch(PullRequest pullRequest) throws IOException {
 
-    Response response = v2Client.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
+    Response response = bitbucketClient.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
     LOG.info("received bitbucket response getPullRequestDiff:{}", response.getStatus());
     String diffString = response.readEntity(String.class);
 
@@ -276,10 +276,10 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   /**
-   * Load all previous comments made by provided github account.
+   * Load all previous comments made by provided bitbucket account.
    */
-  private void loadExistingReviewComments(BitbucketV2Client v2Client) throws IOException {
-    Response commentResponse = v2Client.getPullRequestComments(
+  private void loadExistingReviewComments() throws IOException {
+    Response commentResponse = bitbucketClient.getPullRequestComments(
       config.repositoryOwner(), config.repository(), pullRequest.getId());
     commentList = commentResponse.readEntity(CommentList.class);
 
@@ -371,7 +371,7 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public void addGlobalComment(String comment) {
-    LOG.info("global comment:{}", comment);
+    LOG.debug("global comment:{}", comment);
 
     Response response = bitbucketClient.postPullRequestComment(
       config.repositoryOwner(),
