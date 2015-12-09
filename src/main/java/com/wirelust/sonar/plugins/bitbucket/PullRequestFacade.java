@@ -236,16 +236,9 @@ public class PullRequestFacade implements BatchComponent {
   private void loadPatch(PullRequest pullRequest) throws IOException {
 
     Response response = bitbucketClient.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
-    LOG.info("received bitbucket response getPullRequestDiff:{}", response.getStatus());
+    LOG.debug("received bitbucket response getPullRequestDiff:{}", response.getStatus());
+
     String diffString = response.readEntity(String.class);
-
-    MultivaluedMap<String, String> headers = response.getStringHeaders();
-    for (String key : headers.keySet()) {
-      LOG.info("header:{} value:{}", key, headers.get(key));
-    }
-
-    LOG.info("diffString:{}", diffString);
-
     InputStream diffStream = new ByteArrayInputStream(diffString.getBytes(StandardCharsets.UTF_8));
 
     Patch patch = new Patch();
@@ -255,21 +248,19 @@ public class PullRequestFacade implements BatchComponent {
 
     for (FileHeader fileHeader : patch.getFiles()) {
       List<Integer> patchLocationMapping = new ArrayList<>();
-      LOG.info("adding file:{}", fileHeader.getNewPath());
       patchPositionMappingByFile.put(fileHeader.getNewPath(), patchLocationMapping);
 
       if (fileHeader.getHunks() == null) {
         continue;
       }
 
-      int currentLine;
       for (HunkHeader hunk : fileHeader.getHunks()) {
-        currentLine = hunk.getNewStartLine();
         for (Edit edit : hunk.toEditList()) {
-          if (edit.getType().equals(Edit.Type.INSERT) || edit.getType().equals(Edit.Type.REPLACE)) {
-            patchLocationMapping.add(currentLine);
+          if (!edit.getType().equals(Edit.Type.DELETE)) {
+            for (int line=edit.getBeginB(); line<edit.getEndB(); line++) {
+              patchLocationMapping.add(line+1);
+            }
           }
-          currentLine++;
         }
       }
     }
@@ -311,7 +302,6 @@ public class PullRequestFacade implements BatchComponent {
    * Test if the P/R contains the provided file path (ie this file was added/modified/updated)
    */
   public boolean hasFile(InputFile inputFile) {
-    LOG.info("checking for file:{}", inputFile);
     return patchPositionMappingByFile.containsKey(getPath(inputFile));
   }
 
@@ -319,6 +309,7 @@ public class PullRequestFacade implements BatchComponent {
    * Test if the P/R contains the provided line for the file path (ie this line is "visible" in diff)
    */
   public boolean hasFileLine(InputFile inputFile, int line) {
+    LOG.info("checking for file:{}, line:{}, exists:{}", inputFile, line, patchPositionMappingByFile.get(getPath(inputFile)).contains(line));
     return patchPositionMappingByFile.get(getPath(inputFile)).contains(line);
   }
 
