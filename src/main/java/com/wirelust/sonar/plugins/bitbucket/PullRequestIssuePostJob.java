@@ -106,21 +106,21 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
       boolean reportedInline = false;
       if (inputFile != null && issueLine != null) {
-        int line = issueLine.intValue();
-        if (pullRequestFacade.hasFileLine(inputFile, line)) {
+        if (pullRequestFacade.hasFileLine(inputFile, issueLine)) {
           String message = issue.message();
           String ruleKey = issue.ruleKey().toString();
           if (!commentToBeAddedByFileAndByLine.containsKey(inputFile)) {
             commentToBeAddedByFileAndByLine.put(inputFile, new HashMap<Integer, StringBuilder>());
           }
           Map<Integer, StringBuilder> commentsByLine = commentToBeAddedByFileAndByLine.get(inputFile);
-          if (!commentsByLine.containsKey(line)) {
-            commentsByLine.put(line, new StringBuilder());
+          if (!commentsByLine.containsKey(issueLine)) {
+            commentsByLine.put(issueLine, new StringBuilder());
           }
-          commentsByLine.get(line).append(markDownUtils.inlineIssue(severity, message, ruleKey)).append("\n");
+          commentsByLine.get(issueLine).append(markDownUtils.inlineIssue(severity, message, ruleKey)).append("\n");
           reportedInline = true;
         }
       }
+
       report.process(issue, pullRequestFacade.getGithubUrl(inputFile, issueLine), reportedInline);
 
     }

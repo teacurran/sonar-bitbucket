@@ -46,6 +46,7 @@ import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
+import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
 import org.eclipse.jgit.diff.Edit;
@@ -80,7 +81,7 @@ public class PullRequestFacade implements BatchComponent {
   static final String COMMIT_CONTEXT = "sonarqube";
 
   private final BitBucketPluginConfiguration config;
-  private Map<String, List<Integer>> patchPositionMappingByFile;
+  private Map<String, List<Integer>> modifiedLinesByFile;
   private Map<String, Map<Integer, Comment>> existingReviewCommentsByLocationByFile = new HashMap<>();
 
   private Repository repository;
@@ -138,6 +139,7 @@ public class PullRequestFacade implements BatchComponent {
       Response pullRequestResponse = bitbucketClient.getPullRequestById(
         config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
+      pullRequestResponse.close();
 
       LOG.info("Starting analysis of pull request: " + pullRequest.getId());
 
@@ -244,11 +246,11 @@ public class PullRequestFacade implements BatchComponent {
     Patch patch = new Patch();
     patch.parse(diffStream);
 
-    patchPositionMappingByFile = new HashMap<>();
+    modifiedLinesByFile = new HashMap<>();
 
     for (FileHeader fileHeader : patch.getFiles()) {
       List<Integer> patchLocationMapping = new ArrayList<>();
-      patchPositionMappingByFile.put(fileHeader.getNewPath(), patchLocationMapping);
+      modifiedLinesByFile.put(fileHeader.getNewPath(), patchLocationMapping);
 
       if (fileHeader.getHunks() == null) {
         continue;
@@ -302,39 +304,73 @@ public class PullRequestFacade implements BatchComponent {
    * Test if the P/R contains the provided file path (ie this file was added/modified/updated)
    */
   public boolean hasFile(InputFile inputFile) {
-    return patchPositionMappingByFile.containsKey(getPath(inputFile));
+    return modifiedLinesByFile.containsKey(getPath(inputFile));
   }
 
   /**
    * Test if the P/R contains the provided line for the file path (ie this line is "visible" in diff)
    */
   public boolean hasFileLine(InputFile inputFile, int line) {
-    LOG.info("checking for file:{}, line:{}, exists:{}", inputFile, line, patchPositionMappingByFile.get(getPath(inputFile)).contains(line));
-    return patchPositionMappingByFile.get(getPath(inputFile)).contains(line);
+    return modifiedLinesByFile.get(getPath(inputFile)).contains(line);
   }
 
   public void createOrUpdateReviewComment(InputFile inputFile, Integer line, String body) {
-    String fullpath = getPath(inputFile);
-    Integer lineInPatch = patchPositionMappingByFile.get(fullpath).get(line);
-    try {
-      if (existingReviewCommentsByLocationByFile.containsKey(fullpath) && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(lineInPatch)) {
-        Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(lineInPatch);
 
-        // TODO: the goal here is to update existing comments. since we don't have more client utilities right now we have to re-visit it later
-        if (existingReview.getContent() != null && existingReview.getContent().getMarkup() != null) {
-          if (!existingReview.getContent().getMarkup().equals(body)) {
+    String fullpath = getPath(inputFile);
+
+    LOG.info("createOrUpdateReviewComment:{} line:{} body:{}", fullpath, line, body);
+
+    try {
+      if (existingReviewCommentsByLocationByFile.containsKey(fullpath)
+        && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(line)) {
+        Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(line);
+
+        if (existingReview.getContent() != null && existingReview.getContent().getRaw() != null) {
+          if (!existingReview.getContent().getRaw().equals(body)) {
             existingReview.getContent().setMarkup(body);
+
+            V1Comment comment = new V1Comment();
+            comment.setCommentId(existingReview.getId());
+            comment.setContent(body);
+            comment.setFilename(fullpath);
+            comment.setLineTo(line);
+            Response response = bitbucketClient.postPullRequestComment(
+              config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
+
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+              String responseBody = response.readEntity(String.class);
+              throw new IllegalStateException(
+                String.format("Unable to update review comment file:%s, expected:%d, got:%d, body:%s",
+                  fullpath, 200, response.getStatus(), responseBody));
+            }
+
+            response.close();
+
           }
         }
         reviewCommentToBeDeletedById.remove(existingReview.getId());
       } else {
-        // todo, get this to work.
-        //pullRequest.createReviewComment(body, pullRequest.getHead().getSha(), fullpath, lineInPatch);
+        V1Comment comment = new V1Comment();
+        comment.setContent(body);
+        comment.setFilename(fullpath);
+        comment.setLineTo(line);
+        Response response = bitbucketClient.postPullRequestComment(
+          config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
+
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+          String responseBody = response.readEntity(String.class);
+          throw new IllegalStateException(
+            String.format("Unable to create review comment file:%s, expected:%d, got:%d, body:%s",
+              fullpath, 200, response.getStatus(), responseBody));
+        }
+        response.close();
+
       }
     } catch (Exception e) {
       throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
     }
 
+    LOG.info("createOrUpdateReviewComment2:{} line:{} body:{}", fullpath, line, body);
   }
 
   public void deleteOutdatedComments() {
@@ -364,6 +400,7 @@ public class PullRequestFacade implements BatchComponent {
 
       throw new IllegalStateException(String.format("Unable to comment the pull request:%d", pullRequest.getId()));
     }
+
   }
 
   public void createOrUpdateSonarQubeStatus(GHCommitState status, String statusDescription) {
