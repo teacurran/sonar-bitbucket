@@ -43,10 +43,10 @@ import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.Comment;
 import com.wirelust.bitbucket.client.representations.CommentList;
 import com.wirelust.bitbucket.client.representations.PullRequest;
-import com.wirelust.bitbucket.client.representations.Repository;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
+import com.wirelust.sonar.plugins.bitbucket.client.JacksonConfigurationProvider;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
 import org.eclipse.jgit.diff.Edit;
@@ -75,7 +75,7 @@ import org.sonar.api.scan.filesystem.PathResolver;
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
 public class PullRequestFacade implements BatchComponent {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PullRequestFacade.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestFacade.class);
 
   @VisibleForTesting
   static final String COMMIT_CONTEXT = "sonarqube";
@@ -84,11 +84,9 @@ public class PullRequestFacade implements BatchComponent {
   private Map<String, List<Integer>> modifiedLinesByFile;
   private Map<String, Map<Integer, Comment>> existingReviewCommentsByLocationByFile = new HashMap<>();
 
-  private Repository repository;
   private PullRequest pullRequest;
-  private CommentList commentList;
 
-  private Map<Long, Comment> reviewCommentToBeDeletedById = new HashMap<>();
+  private List<Long> reviewCommentToBeDeleted = new ArrayList<>();
   private File gitBaseDir;
   private String myself;
   private BitbucketV2Client bitbucketClient;
@@ -110,22 +108,22 @@ public class PullRequestFacade implements BatchComponent {
     try {
       ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
     } catch (IOException e) {
-      LOG.error("unable to register jax-rs providers", e);
+      LOGGER.error("unable to register jax-rs providers", e);
     }
 
     try {
 
       BitbucketAuthClient authClient = getAuthClient();
       Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
-      LOG.info("received bitbucket response to login:{}", response.getStatus());
+      LOGGER.info("received bitbucket response to login:{}", response.getStatus());
 
       if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-        LOG.error("error logging into bitbucket, response received:{}", response.getStatus());
+        LOGGER.error("error logging into bitbucket, response received:{}", response.getStatus());
         return;
       }
 
       AccessToken accessToken = response.readEntity(AccessToken.class);
-      LOG.debug("bitbucket Access token:{}", accessToken.getAccessToken());
+      LOGGER.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
       bitbucketClient = getV2Client(accessToken.getAccessToken());
 
@@ -133,15 +131,12 @@ public class PullRequestFacade implements BatchComponent {
       User user = userResponse.readEntity(User.class);
       myself = user.getUsername();
 
-      Response repoResponse = bitbucketClient.getRepositoryByOwnerRepo(config.repositoryOwner(), config.repository());
-      setRepository(repoResponse.readEntity(Repository.class));
-
       Response pullRequestResponse = bitbucketClient.getPullRequestById(
         config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
       pullRequestResponse.close();
 
-      LOG.info("Starting analysis of pull request: " + pullRequest.getId());
+      LOGGER.info("Starting analysis of pull request: " + pullRequest.getId());
 
       loadExistingReviewComments();
       loadPatch(pullRequest);
@@ -171,16 +166,15 @@ public class PullRequestFacade implements BatchComponent {
             throw new IllegalStateException("Cannot encode with UTF-8", ex);
         }
 
-        LOG.debug("basic auth:{}", basicAuthentication);
+        LOGGER.debug("basic auth:{}", basicAuthentication);
 
         headers.add("Authorization", basicAuthentication);
       }
     });
 
     ResteasyWebTarget target = client.target(config.tokenEndpoint());
-    BitbucketAuthClient authClient = ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
 
-    return authClient;
+    return ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
   }
 
 
@@ -204,14 +198,8 @@ public class PullRequestFacade implements BatchComponent {
     }
 
     ResteasyWebTarget target = client.target(config.endpoint());
-    BitbucketV2Client bitbucketV2Client = ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
 
-    return bitbucketV2Client;
-  }
-
-  @VisibleForTesting
-  void setRepository(Repository repo) {
-    this.repository = repo;
+    return ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
   }
 
   @VisibleForTesting
@@ -238,7 +226,7 @@ public class PullRequestFacade implements BatchComponent {
   private void loadPatch(PullRequest pullRequest) throws IOException {
 
     Response response = bitbucketClient.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
-    LOG.debug("received bitbucket response getPullRequestDiff:{}", response.getStatus());
+    LOGGER.debug("received bitbucket response getPullRequestDiff:{}", response.getStatus());
 
     String diffString = response.readEntity(String.class);
     InputStream diffStream = new ByteArrayInputStream(diffString.getBytes(StandardCharsets.UTF_8));
@@ -274,7 +262,7 @@ public class PullRequestFacade implements BatchComponent {
   private void loadExistingReviewComments() throws IOException {
     Response commentResponse = bitbucketClient.getPullRequestComments(
       config.repositoryOwner(), config.repository(), pullRequest.getId());
-    commentList = commentResponse.readEntity(CommentList.class);
+    CommentList commentList = commentResponse.readEntity(CommentList.class);
 
     for (Comment comment : commentList.getValues()) {
       if (!myself.equals(comment.getUser().getUsername())) {
@@ -289,7 +277,7 @@ public class PullRequestFacade implements BatchComponent {
         existingReviewCommentsByLocationByFile.put(commentPath, new HashMap<Integer, Comment>());
       }
       // By default all previous comments will be marked for deletion
-      reviewCommentToBeDeletedById.put(comment.getId(), comment);
+      reviewCommentToBeDeleted.add(comment.getId());
       if (commentPath != null) {
         existingReviewCommentsByLocationByFile.get(commentPath).put(comment.getInline().getTo(), comment);
       }
@@ -317,8 +305,7 @@ public class PullRequestFacade implements BatchComponent {
   public void createOrUpdateReviewComment(InputFile inputFile, Integer line, String body) {
 
     String fullpath = getPath(inputFile);
-
-    LOG.info("createOrUpdateReviewComment:{} line:{} body:{}", fullpath, line, body);
+    LOGGER.info("creating comment:{} line:{}", fullpath, line, body);
 
     try {
       if (existingReviewCommentsByLocationByFile.containsKey(fullpath)
@@ -348,7 +335,7 @@ public class PullRequestFacade implements BatchComponent {
 
           }
         }
-        reviewCommentToBeDeletedById.remove(existingReview.getId());
+        reviewCommentToBeDeleted.remove(existingReview.getId());
       } else {
         V1Comment comment = new V1Comment();
         comment.setContent(body);
@@ -369,25 +356,26 @@ public class PullRequestFacade implements BatchComponent {
     } catch (Exception e) {
       throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
     }
-
-    LOG.info("createOrUpdateReviewComment2:{} line:{} body:{}", fullpath, line, body);
   }
 
   public void deleteOutdatedComments() {
-    for (Comment reviewToDelete : reviewCommentToBeDeletedById.values()) {
+    for (Long commentId : reviewCommentToBeDeleted) {
+      LOGGER.info("deleting outdated comment:{}", commentId);
+
       Response response = bitbucketClient.deletePullRequestComment(
-        config.repositoryOwner(), config.repository(), pullRequest.getId(), reviewToDelete.getId());
+        config.repositoryOwner(), config.repository(), pullRequest.getId(), commentId);
+      response.close();
 
       if (response.getStatus() != Response.Status.OK.getStatusCode()) {
         throw new IllegalStateException(
           String.format("Unable to delete review comment id:%d, expected:%d, got:%d",
-            reviewToDelete.getId(), 200, response.getStatus()));
+            commentId, 200, response.getStatus()));
       }
     }
   }
 
   public void addGlobalComment(String comment) {
-    LOG.debug("global comment:{}", comment);
+    LOGGER.debug("global comment:{}", comment);
 
     Response response = bitbucketClient.postPullRequestComment(
       config.repositoryOwner(),
