@@ -84,7 +84,8 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   private Map<InputFile, Map<Integer, StringBuilder>> processIssues(GlobalReport report) {
 
-    LOGGER.info("processing issues");
+    LOGGER.debug("processing issues");
+
     Map<InputFile, Map<Integer, StringBuilder>> commentToBeAddedByFileAndByLine = new HashMap<>();
     for (Issue issue : projectIssues.issues()) {
       String severity = issue.severity();
@@ -93,7 +94,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
         continue;
       }
 
-      LOGGER.info("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
+      LOGGER.debug("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
 
       Integer issueLine = issue.line();
       InputFile inputFile = inputFileCache.byKey(issue.componentKey());
@@ -101,8 +102,6 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
         // SONARGITUB-13 Ignore issues on files no modified by the P/R
         continue;
       }
-
-      LOGGER.info("processing issue2:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
 
       boolean reportedInline = false;
       if (inputFile != null && issueLine != null) {

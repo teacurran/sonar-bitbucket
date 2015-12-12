@@ -86,9 +86,9 @@ public class PullRequestFacade implements BatchComponent {
 
   private PullRequest pullRequest;
 
-  private List<Long> reviewCommentToBeDeleted = new ArrayList<>();
+  private List<Long> commentsToBeDeleted = new ArrayList<>();
   private File gitBaseDir;
-  private String myself;
+  private String authenticatedUser;
   private BitbucketV2Client bitbucketClient;
   ResteasyProviderFactory resteasyProviderFactory;
 
@@ -129,7 +129,8 @@ public class PullRequestFacade implements BatchComponent {
 
       Response userResponse = bitbucketClient.getUser();
       User user = userResponse.readEntity(User.class);
-      myself = user.getUsername();
+      authenticatedUser = user.getUsername();
+      LOGGER.debug("authenticated bitbucket as username:{}", authenticatedUser);
 
       Response pullRequestResponse = bitbucketClient.getPullRequestById(
         config.repositoryOwner(), config.repository(), (long)pullRequestNumber);
@@ -265,7 +266,7 @@ public class PullRequestFacade implements BatchComponent {
     CommentList commentList = commentResponse.readEntity(CommentList.class);
 
     for (Comment comment : commentList.getValues()) {
-      if (!myself.equals(comment.getUser().getUsername())) {
+      if (!authenticatedUser.equals(comment.getUser().getUsername())) {
         // Ignore comments from other users
         continue;
       }
@@ -273,14 +274,15 @@ public class PullRequestFacade implements BatchComponent {
       if (comment.getInline() != null) {
         commentPath = comment.getInline().getPath();
       }
-      if (commentPath != null && !existingReviewCommentsByLocationByFile.containsKey(commentPath)) {
-        existingReviewCommentsByLocationByFile.put(commentPath, new HashMap<Integer, Comment>());
-      }
-      // By default all previous comments will be marked for deletion
-      reviewCommentToBeDeleted.add(comment.getId());
       if (commentPath != null) {
+        if (!existingReviewCommentsByLocationByFile.containsKey(commentPath)) {
+          existingReviewCommentsByLocationByFile.put(commentPath, new HashMap<Integer, Comment>());
+        }
         existingReviewCommentsByLocationByFile.get(commentPath).put(comment.getInline().getTo(), comment);
       }
+
+      // By default all previous comments will be marked for deletion
+      commentsToBeDeleted.add(comment.getId());
     }
   }
 
@@ -335,7 +337,7 @@ public class PullRequestFacade implements BatchComponent {
 
           }
         }
-        reviewCommentToBeDeleted.remove(existingReview.getId());
+        commentsToBeDeleted.remove(existingReview.getId());
       } else {
         V1Comment comment = new V1Comment();
         comment.setContent(body);
@@ -359,7 +361,7 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public void deleteOutdatedComments() {
-    for (Long commentId : reviewCommentToBeDeleted) {
+    for (Long commentId : commentsToBeDeleted) {
       LOGGER.info("deleting outdated comment:{}", commentId);
 
       Response response = bitbucketClient.deletePullRequestComment(
@@ -415,6 +417,7 @@ public class PullRequestFacade implements BatchComponent {
     }
     return null;
   }
+
 
   @VisibleForTesting
   @CheckForNull
