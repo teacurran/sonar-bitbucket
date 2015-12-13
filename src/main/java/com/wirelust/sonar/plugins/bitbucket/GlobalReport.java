@@ -20,7 +20,6 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import javax.annotation.Nullable;
-import org.kohsuke.github.GHCommitState;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.rule.Severity;
 
@@ -62,10 +61,6 @@ public class GlobalReport {
     StringBuilder sb = new StringBuilder();
     printNewIssuesInline(sb);
     return sb.toString();
-  }
-
-  public GHCommitState getStatus() {
-    return (newIssues(Severity.BLOCKER) > 0 || newIssues(Severity.CRITICAL) > 0) ? GHCommitState.ERROR : GHCommitState.SUCCESS;
   }
 
   private int newIssues(String s) {
@@ -141,4 +136,20 @@ public class GlobalReport {
   public boolean hasNewIssue() {
     return newIssues(Severity.BLOCKER) + newIssues(Severity.CRITICAL) + newIssues(Severity.MAJOR) + newIssues(Severity.MINOR) + newIssues(Severity.INFO) > 0;
   }
+
+  public boolean isApproved(String threshold) {
+
+    boolean approved = true;
+    boolean belowThreshold = true;
+    for (String severity : Severity.ALL) {
+      if (severity.equalsIgnoreCase(threshold)) {
+        belowThreshold = false;
+      }
+      if (!belowThreshold && newIssues(severity) > 0) {
+        approved = false;
+      }
+    }
+    return approved;
+  }
+
 }

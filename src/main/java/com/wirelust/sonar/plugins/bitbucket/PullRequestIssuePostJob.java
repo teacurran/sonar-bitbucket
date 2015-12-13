@@ -22,6 +22,7 @@ package com.wirelust.sonar.plugins.bitbucket;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.kohsuke.github.GHCommitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.CheckProject;
@@ -30,6 +31,7 @@ import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.resources.Project;
+import org.sonar.api.rule.Severity;
 
 /**
  * Compute comments to be added on the pull request.
@@ -40,13 +42,14 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   private final PullRequestFacade pullRequestFacade;
   private final ProjectIssues projectIssues;
-  private final BitBucketPluginConfiguration bitBucketPluginConfiguration;
+  private final BitBucketPluginConfiguration config;
   private final InputFileCache inputFileCache;
   private final MarkDownUtils markDownUtils;
 
-  public PullRequestIssuePostJob(BitBucketPluginConfiguration bitBucketPluginConfiguration, PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
+  public PullRequestIssuePostJob(BitBucketPluginConfiguration bitBucketPluginConfiguration,
+                                 PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
                                  InputFileCache inputFileCache, MarkDownUtils markDownUtils) {
-    this.bitBucketPluginConfiguration = bitBucketPluginConfiguration;
+    this.config = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
     this.projectIssues = projectIssues;
     this.inputFileCache = inputFileCache;
@@ -55,7 +58,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   @Override
   public boolean shouldExecuteOnProject(Project project) {
-    return bitBucketPluginConfiguration.isEnabled();
+    return config.isEnabled();
   }
 
   @Override
@@ -74,7 +77,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
       pullRequestFacade.addGlobalComment(report.formatForMarkdown());
     }
 
-    pullRequestFacade.createOrUpdateSonarQubeStatus(report.getStatus(), report.getStatusDescription());
+    pullRequestFacade.createOrUpdateSonarQubeStatus(report.isApproved(config.issueThreshold()), report.getStatusDescription());
   }
 
   @Override

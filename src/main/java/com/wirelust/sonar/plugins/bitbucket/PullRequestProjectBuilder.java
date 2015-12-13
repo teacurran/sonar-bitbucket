@@ -51,7 +51,7 @@ public class PullRequestProjectBuilder extends ProjectBuilder {
     int pullRequestNumber = bitBucketPluginConfiguration.pullRequestNumber();
     pullRequestFacade.init(pullRequestNumber, context.projectReactor().getRoot().getBaseDir());
 
-    pullRequestFacade.createOrUpdateSonarQubeStatus(GHCommitState.PENDING, "SonarQube analysis in progress");
+    pullRequestFacade.createOrUpdateSonarQubeStatus(false, "SonarQube analysis in progress");
   }
 
   private void checkMode() {

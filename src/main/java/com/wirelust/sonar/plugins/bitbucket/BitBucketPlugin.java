@@ -26,6 +26,7 @@ import org.sonar.api.Properties;
 import org.sonar.api.Property;
 import org.sonar.api.PropertyType;
 import org.sonar.api.SonarPlugin;
+import org.sonar.api.rule.Severity;
 
 @Properties({
   @Property(
@@ -44,7 +45,7 @@ import org.sonar.api.SonarPlugin;
     key = BitBucketPlugin.BITBUCKET_LOGIN,
     name = "BitBucket Login",
     description = "BitBucket account used to perform operations like adding comments on pull requests.",
-    global = false),
+    global = true),
   @Property(
     key = BitBucketPlugin.BITBUCKET_PASSWORD,
     name = "BitBucket Password",
@@ -56,7 +57,7 @@ import org.sonar.api.SonarPlugin;
     name = "BitBucket repository",
     description = "BitBucket repository for this project. Will be guessed from '" + CoreProperties.LINKS_SOURCES_DEV + "' if present",
     global = false,
-    project = false),
+    project = true),
   @Property(
     key = BitBucketPlugin.BITBUCKET_PULL_REQUEST,
     name = "BitBucket Pull Request",
@@ -64,6 +65,16 @@ import org.sonar.api.SonarPlugin;
     type = PropertyType.INTEGER,
     global = false,
     project = false,
+    module = false),
+  @Property(
+    key = BitBucketPlugin.BITBUCKET_ISSUE_THRESHOLD,
+    name = "BitBucket Issue Threshold",
+    description = "Severity at which a pull request can be approved",
+    type = PropertyType.SINGLE_SELECT_LIST,
+    options = {Severity.BLOCKER, Severity.CRITICAL, Severity.MAJOR, Severity.MINOR, Severity.INFO},
+    defaultValue = Severity.MAJOR,
+    global = true,
+    project = true,
     module = false)
 })
 public class BitBucketPlugin extends SonarPlugin {
@@ -76,7 +87,7 @@ public class BitBucketPlugin extends SonarPlugin {
   public static final String BITBUCKET_PASSWORD = "sonar.bitbucket.password";
   public static final String BITBUCKET_REPO = "sonar.bitbucket.repository";
   public static final String BITBUCKET_PULL_REQUEST = "sonar.bitbucket.pullRequest";
-
+  public static final String BITBUCKET_ISSUE_THRESHOLD = "sonar.bitbucket.threshold";
 
   @Override
   public List getExtensions() {

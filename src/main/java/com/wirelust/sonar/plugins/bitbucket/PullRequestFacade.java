@@ -58,9 +58,6 @@ import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.kohsuke.github.GHCommitState;
-import org.kohsuke.github.GHCommitStatus;
-import org.kohsuke.github.GHPullRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
@@ -393,19 +390,25 @@ public class PullRequestFacade implements BatchComponent {
 
   }
 
-  public void createOrUpdateSonarQubeStatus(GHCommitState status, String statusDescription) {
-        // TODO: implement
-//    try {
-//      // Copy previous targetUrl in case it was set by an external system (like the CI job).
-//      String targetUrl = null;
-//      GHCommitStatus lastStatus = getCommitStatusForContext(pullRequest, COMMIT_CONTEXT);
-//      if (lastStatus != null) {
-//        targetUrl = lastStatus.getTargetUrl();
-//      }
-//      ghRepo.createCommitStatus(pullRequest.getHead().getSha(), status, targetUrl, statusDescription, COMMIT_CONTEXT);
-//    } catch (IOException e) {
-//      throw new IllegalStateException("Unable to update commit status", e);
-//    }
+  public void createOrUpdateSonarQubeStatus(boolean isApproved, String statusDescription) {
+
+    String repoOwner = config.repositoryOwner();
+    String repo = config.repository();
+
+    Response response;
+    if (isApproved) {
+      response = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
+    } else {
+      response = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
+    }
+
+    response.close();
+
+    if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+      throw new IllegalStateException(
+        String.format("Unable to update pull request approval status. expected:%d, got:%d",
+          200, response.getStatus()));
+    }
   }
 
   @CheckForNull
@@ -419,20 +422,4 @@ public class PullRequestFacade implements BatchComponent {
   }
 
 
-  @VisibleForTesting
-  @CheckForNull
-  GHCommitStatus getCommitStatusForContext(GHPullRequest pr, String context) {
-    List<GHCommitStatus> statuses;
-    try {
-      statuses = pr.getRepository().listCommitStatuses(pr.getHead().getSha()).asList();
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to retrieve commit statuses.", e);
-    }
-    for (GHCommitStatus status : statuses) {
-      if (context.equals(status.getContext())) {
-        return status;
-      }
-    }
-    return null;
-  }
 }

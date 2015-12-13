@@ -22,6 +22,7 @@ package com.wirelust.sonar.plugins.bitbucket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
+
 import org.sonar.api.BatchComponent;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.InstantiationStrategy;
@@ -139,4 +140,7 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     return settings.getString(BitBucketPlugin.BITBUCKET_ENDPOINT);
   }
 
+  public String issueThreshold() {
+    return settings.getString(BitBucketPlugin.BITBUCKET_ISSUE_THRESHOLD);
+  }
 }

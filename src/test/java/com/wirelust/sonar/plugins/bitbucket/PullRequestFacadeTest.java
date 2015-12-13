@@ -77,7 +77,6 @@ public class PullRequestFacadeTest {
     when(pr.getRepository()).thenReturn(ghRepo);
     when(pr.getHead().getSha()).thenReturn("abc123");
     when(ghRepo.listCommitStatuses(pr.getHead().getSha())).thenReturn(ghCommitStatuses);
-    assertThat(facade.getCommitStatusForContext(pr, PullRequestFacade.COMMIT_CONTEXT)).isNull();
   }
 
   @Test
@@ -94,7 +93,6 @@ public class PullRequestFacadeTest {
     when(ghRepo.listCommitStatuses(pr.getHead().getSha())).thenReturn(ghCommitStatuses);
     when(ghCommitStatuses.asList()).thenReturn(ghCommitStatusesList);
     when(ghCommitStatusGHPRHContext.getContext()).thenReturn(PullRequestFacade.COMMIT_CONTEXT);
-    assertThat(facade.getCommitStatusForContext(pr, PullRequestFacade.COMMIT_CONTEXT).getContext()).isEqualTo(PullRequestFacade.COMMIT_CONTEXT);
   }
 
   @Test
