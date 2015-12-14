@@ -118,7 +118,7 @@ public class GlobalReport {
     }
   }
 
-  public void process(Issue issue, @Nullable String githubUrl, boolean reportedOnDiff) {
+  public void process(Issue issue, @Nullable String webUrl, boolean reportedOnDiff) {
     increment(issue.severity());
     if (!reportedOnDiff) {
       notReportedIssueCount++;
@@ -126,7 +126,7 @@ public class GlobalReport {
       if (notReportedDisplayedIssueCount < BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {
         notReportedOnDiff
           .append("* ")
-          .append(markDownUtils.globalIssue(issue.severity(), issue.message(), issue.ruleKey().toString(), githubUrl, issue.componentKey()))
+          .append(markDownUtils.globalIssue(issue.severity(), issue.message(), issue.ruleKey().toString(), webUrl, issue.componentKey()))
           .append("\n");
         notReportedDisplayedIssueCount++;
       }

@@ -59,7 +59,7 @@ public class PullRequestProjectBuilder extends ProjectBuilder {
       // 5.2+
       || "issues".equals(settings.getString(CoreProperties.ANALYSIS_MODE));
     if (!isIssues) {
-      throw MessageException.of("The GitHub plugin is only intended to be used in preview or issues mode. Please set '" + CoreProperties.ANALYSIS_MODE + "'.");
+      throw MessageException.of("The Bitbucket plugin is only intended to be used in preview or issues mode. Please set '" + CoreProperties.ANALYSIS_MODE + "'.");
     }
 
   }

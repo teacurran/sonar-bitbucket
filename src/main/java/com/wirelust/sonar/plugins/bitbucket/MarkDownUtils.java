@@ -30,7 +30,7 @@ import org.sonar.api.config.Settings;
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
 public class MarkDownUtils implements BatchComponent {
 
-  private static final String IMAGES_ROOT_URL = "https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/";
+  private static final String IMAGES_ROOT_URL = "https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/";
   private final String ruleUrlPrefix;
 
   public MarkDownUtils(Settings settings) {

@@ -50,7 +50,7 @@ public class PullRequestFacadeTest {
 
   @Test
   @Ignore
-  public void testGetGithubUrl() throws Exception {
+  public void testGetWebUrl() throws Exception {
 
     File gitBasedir = temp.newFolder();
 

@@ -153,14 +153,14 @@ public class PullRequestIssuePostJobTest {
     pullRequestIssuePostJob.executeOn(null, null);
     verify(pullRequestFacade).addGlobalComment(contains("SonarQube analysis reported 5 issues:"));
     verify(pullRequestFacade)
-      .addGlobalComment(contains("* ![BLOCKER](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-blocker.png) 5 blocker"));
+      .addGlobalComment(contains("* ![BLOCKER](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-blocker.png) 5 blocker"));
     verify(pullRequestFacade)
       .addGlobalComment(
         not(contains("* [msg]")));
     verify(pullRequestFacade)
       .addGlobalComment(
         contains(
-          "* ![BLOCKER](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-blocker.png) [msg2](http://github/blob/abc123/src/Foo.php#L2) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Arule)"));
+          "* ![BLOCKER](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-blocker.png) [msg2](http://github/blob/abc123/src/Foo.php#L2) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Arule)"));
 
     verify(pullRequestFacade).unapprovePullRequest();
   }

@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GlobalReportTest {
 
-  private static final String GITHUB_URL = "https://github.com/SonarCommunity/sonar-github";
+  private static final String GITHUB_URL = "https://github.com/teacurran/sonar-bitbucket";
 
   private List<DefaultIssue> issues = new ArrayList<>();
 
@@ -72,11 +72,11 @@ public class GlobalReportTest {
     globalReport.process(issues.get(4).setSeverity(Severity.BLOCKER), GITHUB_URL, true);
 
     String desiredMarkdown = "SonarQube analysis reported 5 issues:\n" +
-      "* ![BLOCKER](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-blocker.png) 1 blocker\n" +
-      "* ![CRITICAL](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-critical.png) 1 critical\n" +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) 1 major\n" +
-      "* ![MINOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-minor.png) 1 minor\n" +
-      "* ![INFO](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-info.png) 1 info\n" +
+      "* ![BLOCKER](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-blocker.png) 1 blocker\n" +
+      "* ![CRITICAL](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-critical.png) 1 critical\n" +
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) 1 major\n" +
+      "* ![MINOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-minor.png) 1 minor\n" +
+      "* ![INFO](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-info.png) 1 info\n" +
       "\nWatch the comments in this conversation to review them.";
 
     String formattedGlobalReport = globalReport.formatForMarkdown();
@@ -92,28 +92,28 @@ public class GlobalReportTest {
     }
 
     String desiredMarkdown = "SonarQube analysis reported 17 issues:\n" +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) 17 major\n" +
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) 17 major\n" +
       "\nWatch the comments in this conversation to review them." +
       "\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n" +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:0](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue0)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:0](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue0)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:1](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue1)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:1](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue1)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:2](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue2)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:2](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue2)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:3](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue3)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:3](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue3)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:4](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue4)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:4](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue4)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:5](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue5)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:5](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue5)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:6](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue6)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:6](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue6)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:7](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue7)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:7](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue7)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:8](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue8)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:8](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue8)\n"
       +
-      "* ![MAJOR](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-major.png) [Issue number:9](https://github.com/SonarCommunity/sonar-github) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue9)\n"
+      "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:9](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue9)\n"
       +
       "* ... 7 more\n";
 

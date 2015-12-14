@@ -84,7 +84,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   @Override
   public String toString() {
-    return "GitHub Pull Request Issue Publisher";
+    return "Bitbucket Pull Request Issue Publisher";
   }
 
   private Map<InputFile, Map<Integer, StringBuilder>> processIssues(GlobalReport report) {

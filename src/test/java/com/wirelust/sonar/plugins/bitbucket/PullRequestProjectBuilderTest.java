@@ -66,7 +66,7 @@ public class PullRequestProjectBuilderTest {
     settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
 
     thrown.expect(MessageException.class);
-    thrown.expectMessage("The GitHub plugin is only intended to be used in preview or issues mode. Please set 'sonar.analysis.mode'.");
+    thrown.expectMessage("The Bitbucket plugin is only intended to be used in preview or issues mode. Please set 'sonar.analysis.mode'.");
 
     pullRequestProjectBuilder.build(null);
   }
