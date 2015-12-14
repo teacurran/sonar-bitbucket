@@ -392,10 +392,12 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public void approvePullRequest() {
+    LOGGER.info("approving pull request");
     createOrUpdateApproval(true);
   }
 
   public void unapprovePullRequest() {
+    LOGGER.info("removing pull request approval");
     createOrUpdateApproval(false);
   }
 
