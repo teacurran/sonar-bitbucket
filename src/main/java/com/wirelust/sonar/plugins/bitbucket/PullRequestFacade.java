@@ -413,7 +413,14 @@ public class PullRequestFacade implements BatchComponent {
 
     response.close();
 
-    if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+    // we are allowing Conflict (409) and Not Found (404)
+    // because we are not first checking if a request is already approved before sending the calls
+    // if a request is approved and another approval is sent it will return 409
+    // if you try to delete an approval that doesn't exist you will get a 404
+    if (response.getStatus() != Response.Status.OK.getStatusCode()
+      && response.getStatus() != Response.Status.NO_CONTENT.getStatusCode()
+      && response.getStatus() != Response.Status.CONFLICT.getStatusCode()
+      && response.getStatus() != Response.Status.NOT_FOUND.getStatusCode()) {
       throw new IllegalStateException(
         String.format("Unable to update pull request approval status. expected:%d, got:%d",
           200, response.getStatus()));
