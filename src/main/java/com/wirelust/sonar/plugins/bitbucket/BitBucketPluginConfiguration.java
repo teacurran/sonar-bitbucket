@@ -140,6 +140,7 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     return settings.getString(BitBucketPlugin.BITBUCKET_ENDPOINT);
   }
 
+  @CheckForNull
   public String issueThreshold() {
     return settings.getString(BitBucketPlugin.BITBUCKET_ISSUE_THRESHOLD);
   }

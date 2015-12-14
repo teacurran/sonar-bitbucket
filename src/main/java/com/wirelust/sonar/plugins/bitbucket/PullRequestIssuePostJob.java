@@ -22,7 +22,6 @@ package com.wirelust.sonar.plugins.bitbucket;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.kohsuke.github.GHCommitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.CheckProject;
@@ -31,7 +30,6 @@ import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.resources.Project;
-import org.sonar.api.rule.Severity;
 
 /**
  * Compute comments to be added on the pull request.
@@ -77,7 +75,11 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
       pullRequestFacade.addGlobalComment(report.formatForMarkdown());
     }
 
-    pullRequestFacade.createOrUpdateSonarQubeStatus(report.isApproved(config.issueThreshold()), report.getStatusDescription());
+    if (report.isApproved(config.issueThreshold())) {
+      pullRequestFacade.approvePullRequest();
+    } else {
+      pullRequestFacade.unapprovePullRequest();
+    }
   }
 
   @Override
@@ -123,7 +125,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
         }
       }
 
-      report.process(issue, pullRequestFacade.getGithubUrl(inputFile, issueLine), reportedInline);
+      report.process(issue, pullRequestFacade.getWebUrl(inputFile, issueLine), reportedInline);
 
     }
     return commentToBeAddedByFileAndByLine;

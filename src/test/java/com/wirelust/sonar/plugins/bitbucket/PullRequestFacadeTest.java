@@ -24,9 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.eclipse.jgit.diff.Edit;
+import com.wirelust.bitbucket.client.representations.Branch;
+import com.wirelust.bitbucket.client.representations.Link;
+import com.wirelust.bitbucket.client.representations.PullRequest;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
@@ -34,11 +38,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.kohsuke.github.GHCommitStatus;
-import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.PagedIterable;
-import org.mockito.Mockito;
 import org.sonar.api.batch.fs.InputPath;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,42 +56,29 @@ public class PullRequestFacadeTest {
 
     PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
     facade.setGitBaseDir(gitBasedir);
-    GHRepository ghRepo = mock(GHRepository.class);
-    when(ghRepo.getHtmlUrl()).thenReturn(new URL("https://github.com/SonarSource/sonar-java"));
-    //facade.setGhRepo(ghRepo);
-    GHPullRequest pr = mock(GHPullRequest.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
-    when(pr.getHead().getSha()).thenReturn("abc123");
+
+    PullRequest pullRequest = mock(PullRequest.class);
+
+    Map<String, List<Link>> prLinkMap = new HashMap<>();
+    List<Link> prLinks = new ArrayList<>();
+    Link link = new Link();
+    link.setHref("https://bitbucket.org/teacurran/test-repo/pull-requests/3/");
+    prLinks.add(link);
+    prLinkMap.put("self", prLinks);
+
+    when(pullRequest.getLinks()).thenReturn(prLinkMap);
+
+    Branch branch = mock(Branch.class);
+    when(branch.getName()).thenReturn("branch-name");
+
+    when(pullRequest.getSource().getBranch()).thenReturn(branch);
+
     //facade.setPullRequest(pr);
     InputPath inputPath = mock(InputPath.class);
     when(inputPath.file()).thenReturn(new File(gitBasedir, "src/main/Foo.java"));
-    assertThat(facade.getGithubUrl(inputPath, 10)).isEqualTo("https://github.com/SonarSource/sonar-java/blob/abc123/src/main/Foo.java#L10");
-  }
 
-  @Test
-  public void testEmptyGetCommitStatusForContext() throws IOException {
-    PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
-    GHRepository ghRepo = mock(GHRepository.class);
-    PagedIterable<GHCommitStatus> ghCommitStatuses = Mockito.mock(PagedIterable.class);
-    GHPullRequest pr = mock(GHPullRequest.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
-    when(pr.getRepository()).thenReturn(ghRepo);
-    when(pr.getHead().getSha()).thenReturn("abc123");
-    when(ghRepo.listCommitStatuses(pr.getHead().getSha())).thenReturn(ghCommitStatuses);
-  }
-
-  @Test
-  public void testGetCommitStatusForContextWithOneCorrectStatus() throws IOException {
-    PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
-    GHRepository ghRepo = mock(GHRepository.class);
-    PagedIterable<GHCommitStatus> ghCommitStatuses = Mockito.mock(PagedIterable.class);
-    List<GHCommitStatus> ghCommitStatusesList = new ArrayList<>();
-    GHCommitStatus ghCommitStatusGHPRHContext = Mockito.mock(GHCommitStatus.class);
-    ghCommitStatusesList.add(ghCommitStatusGHPRHContext);
-    GHPullRequest pr = mock(GHPullRequest.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
-    when(pr.getRepository()).thenReturn(ghRepo);
-    when(pr.getHead().getSha()).thenReturn("abc123");
-    when(ghRepo.listCommitStatuses(pr.getHead().getSha())).thenReturn(ghCommitStatuses);
-    when(ghCommitStatuses.asList()).thenReturn(ghCommitStatusesList);
-    when(ghCommitStatusGHPRHContext.getContext()).thenReturn(PullRequestFacade.COMMIT_CONTEXT);
+    assertThat(facade.getWebUrl(inputPath, 10))
+      .isEqualTo("https://bitbucket.org/teacurran/test-repo/pull-requests/3/branch-name/diff#chg-src/main/Foo.java");
   }
 
   @Test

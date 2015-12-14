@@ -19,7 +19,6 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
-import org.kohsuke.github.GHCommitState;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.bootstrap.ProjectBuilder;
 import org.sonar.api.config.Settings;
@@ -51,7 +50,7 @@ public class PullRequestProjectBuilder extends ProjectBuilder {
     int pullRequestNumber = bitBucketPluginConfiguration.pullRequestNumber();
     pullRequestFacade.init(pullRequestNumber, context.projectReactor().getRoot().getBaseDir());
 
-    pullRequestFacade.createOrUpdateSonarQubeStatus(false, "SonarQube analysis in progress");
+    pullRequestFacade.unapprovePullRequest();
   }
 
   private void checkMode() {

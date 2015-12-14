@@ -42,6 +42,7 @@ import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.Comment;
 import com.wirelust.bitbucket.client.representations.CommentList;
+import com.wirelust.bitbucket.client.representations.Link;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
@@ -390,7 +391,15 @@ public class PullRequestFacade implements BatchComponent {
 
   }
 
-  public void createOrUpdateSonarQubeStatus(boolean isApproved, String statusDescription) {
+  public void approvePullRequest() {
+    createOrUpdateApproval(true);
+  }
+
+  public void unapprovePullRequest() {
+    createOrUpdateApproval(false);
+  }
+
+  private void createOrUpdateApproval(boolean isApproved) {
 
     String repoOwner = config.repositoryOwner();
     String repo = config.repository();
@@ -412,12 +421,18 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   @CheckForNull
-  public String getGithubUrl(@Nullable InputPath inputPath, @Nullable Integer issueLine) {
+  public String getWebUrl(@Nullable InputPath inputPath, @Nullable Integer issueLine) {
     if (inputPath != null) {
-      String path = getPath(inputPath);
-        // TODO: implement
-//      return ghRepo.getHtmlUrl().toString() + "/blob/" + pullRequest.getHead().getSha() + "/" + path + (issueLine != null ? ("#L" + issueLine) : "");
+
+      String url = pullRequest.getLinks().get("self").get(0).getHref() +
+        "/" +
+        pullRequest.getSource().getBranch().getName() +
+        "/diff/#chg-" +
+        getPath(inputPath);
+
+      return url;
     }
+
     return null;
   }
 

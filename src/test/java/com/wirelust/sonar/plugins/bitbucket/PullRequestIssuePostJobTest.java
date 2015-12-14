@@ -67,6 +67,8 @@ public class PullRequestIssuePostJobTest {
 
     settings.setProperty("sonar.host.url", "http://192.168.0.1");
     settings.setProperty(CoreProperties.SERVER_BASE_URL, "http://myserver");
+    when(config.issueThreshold()).thenReturn(Severity.CRITICAL);
+
     pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, issues, cache, new MarkDownUtils(settings));
   }
 
@@ -75,7 +77,7 @@ public class PullRequestIssuePostJobTest {
     when(issues.issues()).thenReturn(Arrays.<Issue>asList());
     pullRequestIssuePostJob.executeOn(null, null);
     verify(pullRequestFacade, never()).addGlobalComment(anyString());
-    verify(pullRequestFacade).createOrUpdateSonarQubeStatus(true, "SonarQube reported no issues");
+    verify(pullRequestFacade).approvePullRequest();
   }
 
   @Test
@@ -89,7 +91,7 @@ public class PullRequestIssuePostJobTest {
     when(newIssue.severity()).thenReturn(Severity.BLOCKER);
     when(newIssue.isNew()).thenReturn(true);
     when(newIssue.message()).thenReturn("msg1");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
+    when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
     Issue lineNotVisible = mock(Issue.class);
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
@@ -99,7 +101,7 @@ public class PullRequestIssuePostJobTest {
     when(lineNotVisible.severity()).thenReturn(Severity.BLOCKER);
     when(lineNotVisible.isNew()).thenReturn(true);
     when(lineNotVisible.message()).thenReturn("msg2");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
+    when(pullRequestFacade.getWebUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
 
     Issue fileNotInPR = mock(Issue.class);
     DefaultInputFile inputFile2 = new DefaultInputFile("src/Foo2.php");
@@ -160,7 +162,7 @@ public class PullRequestIssuePostJobTest {
         contains(
           "* ![BLOCKER](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/severity-blocker.png) [msg2](http://github/blob/abc123/src/Foo.php#L2) [![rule](https://raw.githubusercontent.com/SonarCommunity/sonar-github/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Arule)"));
 
-    verify(pullRequestFacade).createOrUpdateSonarQubeStatus(false, "SonarQube reported 5 issues, with 5 blocker");
+    verify(pullRequestFacade).unapprovePullRequest();
   }
 
   @Test
@@ -174,7 +176,7 @@ public class PullRequestIssuePostJobTest {
     when(newIssue.severity()).thenReturn(Severity.CRITICAL);
     when(newIssue.isNew()).thenReturn(true);
     when(newIssue.message()).thenReturn("msg1");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
+    when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
     when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
@@ -182,7 +184,7 @@ public class PullRequestIssuePostJobTest {
 
     pullRequestIssuePostJob.executeOn(null, null);
 
-    verify(pullRequestFacade).createOrUpdateSonarQubeStatus(false, "SonarQube reported 1 issue, with 1 critical");
+    verify(pullRequestFacade).unapprovePullRequest();
   }
 
   @Test
@@ -196,7 +198,7 @@ public class PullRequestIssuePostJobTest {
     when(newIssue.severity()).thenReturn(Severity.MAJOR);
     when(newIssue.isNew()).thenReturn(true);
     when(newIssue.message()).thenReturn("msg1");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
+    when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
     when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
@@ -204,7 +206,7 @@ public class PullRequestIssuePostJobTest {
 
     pullRequestIssuePostJob.executeOn(null, null);
 
-    verify(pullRequestFacade).createOrUpdateSonarQubeStatus(true, "SonarQube reported 1 issue, no critical nor blocker");
+    verify(pullRequestFacade).approvePullRequest();
   }
 
   @Test
@@ -218,7 +220,7 @@ public class PullRequestIssuePostJobTest {
     when(newIssue.severity()).thenReturn(Severity.CRITICAL);
     when(newIssue.isNew()).thenReturn(true);
     when(newIssue.message()).thenReturn("msg1");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
+    when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
     Issue lineNotVisible = mock(Issue.class);
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
@@ -228,7 +230,7 @@ public class PullRequestIssuePostJobTest {
     when(lineNotVisible.severity()).thenReturn(Severity.BLOCKER);
     when(lineNotVisible.isNew()).thenReturn(true);
     when(lineNotVisible.message()).thenReturn("msg2");
-    when(pullRequestFacade.getGithubUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
+    when(pullRequestFacade.getWebUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
 
     when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue, lineNotVisible));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
@@ -236,6 +238,6 @@ public class PullRequestIssuePostJobTest {
 
     pullRequestIssuePostJob.executeOn(null, null);
 
-    verify(pullRequestFacade).createOrUpdateSonarQubeStatus(false, "SonarQube reported 2 issues, with 1 critical and 1 blocker");
+    verify(pullRequestFacade).unapprovePullRequest();
   }
 }

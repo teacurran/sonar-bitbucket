@@ -110,11 +110,6 @@
       <artifactId>commons-lang3</artifactId>
       <version>3.3.2</version>
     </dependency>
-    <dependency>
-      <groupId>org.kohsuke</groupId>
-      <artifactId>github-api</artifactId>
-      <version>1.69</version>
-    </dependency>
 
     <!-- unit tests -->
     <dependency>
