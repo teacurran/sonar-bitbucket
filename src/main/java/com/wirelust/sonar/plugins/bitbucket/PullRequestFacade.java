@@ -259,8 +259,15 @@ public class PullRequestFacade implements BatchComponent {
    * Load all previous comments made by provided bitbucket account.
    */
   private void loadExistingReviewComments() throws IOException {
-    Response commentResponse = bitbucketClient.getPullRequestComments(
-      config.repositoryOwner(), config.repository(), pullRequest.getId());
+    loadExistingReviewCommentsWithPage(1);
+  }
+
+  private void loadExistingReviewCommentsWithPage(int page) throws IOException {
+    if (page <= 0) {
+      throw new IllegalArgumentException("page must be 1 or greater");
+    }
+    Response commentResponse = bitbucketClient.getPullRequestCommentsWithPage(
+      config.repositoryOwner(), config.repository(), pullRequest.getId(), page);
     CommentList commentList = commentResponse.readEntity(CommentList.class);
 
     for (Comment comment : commentList.getValues()) {
@@ -281,6 +288,11 @@ public class PullRequestFacade implements BatchComponent {
 
       // By default all previous comments will be marked for deletion
       commentsToBeDeleted.add(comment.getId());
+    }
+
+    // if we have more comments, load the next page.
+    if (commentList.getNext() != null) {
+      loadExistingReviewCommentsWithPage(page+1);
     }
   }
 
