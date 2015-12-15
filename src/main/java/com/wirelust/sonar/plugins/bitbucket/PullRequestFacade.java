@@ -42,7 +42,6 @@ import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.Comment;
 import com.wirelust.bitbucket.client.representations.CommentList;
-import com.wirelust.bitbucket.client.representations.Link;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
