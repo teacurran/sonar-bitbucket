@@ -73,6 +73,8 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
     LOGGER.info("report: hasNewIssues:{}", report.hasNewIssue());
     if (report.hasNewIssue()) {
       pullRequestFacade.addGlobalComment(report.formatForMarkdown());
+    } else {
+      pullRequestFacade.addGlobalComment("SonarQube reported no issues");
     }
 
     if (report.isApproved(config.issueThreshold())) {
