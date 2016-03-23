@@ -73,14 +73,6 @@ public class PullRequestIssuePostJobTest {
   }
 
   @Test
-  public void testPullRequestAnalysisNoIssue() {
-    when(issues.issues()).thenReturn(Arrays.<Issue>asList());
-    pullRequestIssuePostJob.executeOn(null, null);
-    verify(pullRequestFacade, never()).addGlobalComment(anyString());
-    verify(pullRequestFacade).approvePullRequest();
-  }
-
-  @Test
   public void testPullRequestAnalysisWithNewIssues() {
     Issue newIssue = mock(Issue.class);
     DefaultInputFile inputFile1 = new DefaultInputFile("src/Foo.php");
