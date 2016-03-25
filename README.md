@@ -7,6 +7,25 @@ https://github.com/SonarCommunity/sonar-github
 For BitBucket API calls, I have put together a client library here:
 https://github.com/teacurran/wirelust-bitbucket-api
 
+# Building
+
+1. Check-out [wirelust-bitbucket-api](https://github.com/teacurran/wirelust-bitbucket-api)
+2. build wirelust-bitbucket-api
+
+    ```
+    mvn install
+    ```
+
+3. build this project:
+    ```
+    mvn package
+    ```
+
+# Installation
+
+1. copy sonar-bitbucket-plugin-1.0-SNAPSHOT.jar to {SONAR_HOME}/extensions/plugins
+2. restart SonarQube
+
 # Usage
 
 1. Install plugin in Sonarqube 
