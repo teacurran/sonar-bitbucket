@@ -36,6 +36,7 @@ https://github.com/teacurran/wirelust-bitbucket-api
         -Dsonar.analysis.mode=preview
         -Dsonar.bitbucket.login={YOUR_BITBUCKET_USER}
         -Dsonar.bitbucket.password={YOUR_PASSWORD}
+        -Dsonar.bitbucket.repository={REPOSITORY_OWNER}/{REPOSITORY}
         -Dsonar.bitbucket.pullRequest={PULL_REQUEST_NUMBER}
         -Dsonar.bitbucket.client.id={BITBUCKET_CLIENT_ID}
         -Dsonar.bitbucket.client.secret={BITBUCKET_CLIENT_SECRET}
