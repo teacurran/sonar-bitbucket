@@ -108,6 +108,22 @@ public class PullRequestFacade implements BatchComponent {
       LOGGER.error("unable to register jax-rs providers", e);
     }
 
+    if (config.login() == null || config.login().isEmpty()) {
+      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null");
+    }
+
+    if (config.password() == null || config.password().isEmpty()) {
+      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_PASSWORD + " cannot be null");
+    }
+
+    if (config.repository() == null || config.repository().isEmpty()) {
+      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_REPO + " cannot be null");
+    }
+
+    if (pullRequestNumber == 0) {
+      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_PULL_REQUEST + " cannot be null");
+    }
+
     try {
 
       BitbucketAuthClient authClient = getAuthClient();
