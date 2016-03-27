@@ -91,6 +91,15 @@ import org.sonar.api.rule.Severity;
     defaultValue = Severity.MAJOR,
     global = true,
     project = true,
+    module = false),
+  @Property(
+    key = BitBucketPlugin.BITBUCKET_REPORT_NOT_IN_PR,
+    name = "Report Issues Not In Diff",
+    description = "Report on issues in code not changed in the Pull Request",
+    type = PropertyType.BOOLEAN,
+    defaultValue = "true",
+    global = true,
+    project = true,
     module = false)
 })
 public class BitBucketPlugin extends SonarPlugin {
@@ -104,6 +113,7 @@ public class BitBucketPlugin extends SonarPlugin {
   public static final String BITBUCKET_REPO = "sonar.bitbucket.repository";
   public static final String BITBUCKET_PULL_REQUEST = "sonar.bitbucket.pullRequest";
   public static final String BITBUCKET_ISSUE_THRESHOLD = "sonar.bitbucket.threshold";
+  public static final String BITBUCKET_REPORT_NOT_IN_PR = "sonar.bitbucket.reportNotInDiff";
 
   @Override
   public List getExtensions() {

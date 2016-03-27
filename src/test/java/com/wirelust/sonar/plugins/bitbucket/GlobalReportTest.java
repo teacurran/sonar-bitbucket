@@ -77,9 +77,9 @@ public class GlobalReportTest {
       "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) 1 major\n" +
       "* ![MINOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-minor.png) 1 minor\n" +
       "* ![INFO](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-info.png) 1 info\n" +
-      "\nWatch the comments in this conversation to review them.";
+      "\nWatch the comments in this conversation to review them.\n";
 
-    String formattedGlobalReport = globalReport.formatForMarkdown();
+    String formattedGlobalReport = globalReport.formatForMarkdown(true);
 
     assertThat(formattedGlobalReport).isEqualTo(desiredMarkdown);
   }
@@ -93,7 +93,7 @@ public class GlobalReportTest {
 
     String desiredMarkdown = "SonarQube analysis reported 17 issues:\n" +
       "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) 17 major\n" +
-      "\nWatch the comments in this conversation to review them." +
+      "\nWatch the comments in this conversation to review them.\n" +
       "\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n" +
       "* ![MAJOR](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-major.png) [Issue number:0](https://github.com/teacurran/sonar-bitbucket) [![rule](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/rule.png)](http://myserver/coding_rules#rule_key=repo%3Aissue0)\n"
       +
@@ -117,7 +117,7 @@ public class GlobalReportTest {
       +
       "* ... 7 more\n";
 
-    String formattedGlobalReport = globalReport.formatForMarkdown();
+    String formattedGlobalReport = globalReport.formatForMarkdown(true);
 
     assertThat(formattedGlobalReport).isEqualTo(desiredMarkdown);
   }

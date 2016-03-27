@@ -38,13 +38,13 @@ public class GlobalReport {
     this.newIssuesBySeverity[Severity.ALL.indexOf(severity)]++;
   }
 
-  public String formatForMarkdown() {
+  public String formatForMarkdown(boolean reportNotInDiff) {
     StringBuilder sb = new StringBuilder();
     printNewIssuesMarkdown(sb);
     if (hasNewIssue()) {
-      sb.append("\nWatch the comments in this conversation to review them.");
+      sb.append("\nWatch the comments in this conversation to review them.\n");
     }
-    if (notReportedOnDiff.length() > 0) {
+    if (reportNotInDiff && notReportedOnDiff.length() > 0) {
       sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n")
         .append(notReportedOnDiff.toString());
 

@@ -107,6 +107,10 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     return null;
   }
 
+  public boolean reportNotInDiff() {
+    return settings.getBoolean(BitBucketPlugin.BITBUCKET_REPORT_NOT_IN_PR);
+  }
+
   @CheckForNull
   public String tokenEndpoint() {
     return settings.getString(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT);

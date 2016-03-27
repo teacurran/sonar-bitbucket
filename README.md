@@ -73,5 +73,5 @@ The only two settings that need to be passed in via maven are:
 | sonar.bitbucket.repository                   | Bitbucket repository in the format: owner/repository                                                                                  |
 | sonar.bitbucket.pullRequest                  | Pull request ID you wish to analyze                                                                                                   |
 | sonar.bitbucket.threshold                    | Minimum issue severity in which a pull request can be approved. [BLOCKER, CRITICAL, MAJOR, MINOR, INFO] default: MAJOR                |
-
+| sonar.bitbucket.reportNotInDiff              | Report on errors that are not caused by changes in the pull request. [true, false] default: true                                      |
 

@@ -69,6 +69,8 @@ public class PullRequestIssuePostJobTest {
     settings.setProperty(CoreProperties.SERVER_BASE_URL, "http://myserver");
     when(config.issueThreshold()).thenReturn(Severity.CRITICAL);
 
+    when(config.reportNotInDiff()).thenReturn(true);
+
     pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, issues, cache, new MarkDownUtils(settings));
   }
 
