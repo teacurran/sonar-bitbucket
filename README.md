@@ -70,7 +70,8 @@ The only two settings that need to be passed in via maven are:
 | sonar.bitbucket.apiKey                       | If you want to create pull request comments for Sonar issues under your team account, provide the API key for your team account here. |
 | sonar.bitbucket.client.id                    | Bitbucket client id, required in addition to login                                                                                    |
 | sonar.bitbucket.client.secret                | Bitbucket client secret, required in addition to login                                                                                |
+| sonar.bitbucket.repository                   | Bitbucket repository in the format: owner/repository                                                                                  |
 | sonar.bitbucket.pullRequest                  | Pull request ID you wish to analyze                                                                                                   |
-| sonar.bitbucket.threshold                    | Minimum issue severity in which a pull request can be approved. [BLOCKER, CRITICAL, MAJOR, MINOR, INFO]                                 |
+| sonar.bitbucket.threshold                    | Minimum issue severity in which a pull request can be approved. [BLOCKER, CRITICAL, MAJOR, MINOR, INFO] default: MAJOR                |
 
 
