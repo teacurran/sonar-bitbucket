@@ -29,22 +29,24 @@ public class GlobalReport {
   private StringBuilder notReportedOnDiff = new StringBuilder();
   private int notReportedIssueCount = 0;
   private int notReportedDisplayedIssueCount = 0;
+  private BitBucketPluginConfiguration config;
 
-  public GlobalReport(MarkDownUtils markDownUtils) {
+  public GlobalReport(MarkDownUtils markDownUtils, BitBucketPluginConfiguration config) {
     this.markDownUtils = markDownUtils;
+    this.config = config;
   }
 
   private void increment(String severity) {
     this.newIssuesBySeverity[Severity.ALL.indexOf(severity)]++;
   }
 
-  public String formatForMarkdown(boolean reportNotInDiff) {
+  public String formatForMarkdown() {
     StringBuilder sb = new StringBuilder();
     printNewIssuesMarkdown(sb);
     if (hasNewIssue()) {
       sb.append("\nWatch the comments in this conversation to review them.\n");
     }
-    if (reportNotInDiff && notReportedOnDiff.length() > 0) {
+    if (notReportedOnDiff.length() > 0) {
       sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n")
         .append(notReportedOnDiff.toString());
 
@@ -119,8 +121,10 @@ public class GlobalReport {
   }
 
   public void process(Issue issue, @Nullable String webUrl, boolean reportedOnDiff) {
-    increment(issue.severity());
-    if (!reportedOnDiff) {
+    if (reportedOnDiff) {
+      increment(issue.severity());
+    } else if (config.reportNotInDiff()) {
+      increment(issue.severity());
       notReportedIssueCount++;
 
       if (notReportedDisplayedIssueCount < BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {

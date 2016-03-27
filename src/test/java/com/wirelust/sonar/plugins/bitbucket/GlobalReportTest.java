@@ -32,6 +32,8 @@ import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.Severity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class GlobalReportTest {
 
@@ -40,6 +42,7 @@ public class GlobalReportTest {
   private List<DefaultIssue> issues = new ArrayList<>();
 
   private Settings settings;
+  BitBucketPluginConfiguration config;
 
   @Before
   public void setup() {
@@ -60,11 +63,15 @@ public class GlobalReportTest {
       .build()));
 
     settings.setProperty("sonar.host.url", "http://myserver");
+
+    config = mock(BitBucketPluginConfiguration.class);
+    when(config.reportNotInDiff()).thenReturn(true);
   }
 
   @Test
   public void shouldFormatIssuesForMarkdown() {
-    GlobalReport globalReport = new GlobalReport(new MarkDownUtils(settings));
+
+    GlobalReport globalReport = new GlobalReport(new MarkDownUtils(settings), config);
     globalReport.process(issues.get(0).setSeverity(Severity.INFO), GITHUB_URL, true);
     globalReport.process(issues.get(1).setSeverity(Severity.MINOR), GITHUB_URL, true);
     globalReport.process(issues.get(2).setSeverity(Severity.MAJOR), GITHUB_URL, true);
@@ -79,14 +86,14 @@ public class GlobalReportTest {
       "* ![INFO](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-info.png) 1 info\n" +
       "\nWatch the comments in this conversation to review them.\n";
 
-    String formattedGlobalReport = globalReport.formatForMarkdown(true);
+    String formattedGlobalReport = globalReport.formatForMarkdown();
 
     assertThat(formattedGlobalReport).isEqualTo(desiredMarkdown);
   }
 
   @Test
   public void shouldLimitGlobalIssues() {
-    GlobalReport globalReport = new GlobalReport(new MarkDownUtils(settings));
+    GlobalReport globalReport = new GlobalReport(new MarkDownUtils(settings), config);
     for (int i = 0; i < 17; i++) {
       globalReport.process(issues.get(i), GITHUB_URL, false);
     }
@@ -117,7 +124,7 @@ public class GlobalReportTest {
       +
       "* ... 7 more\n";
 
-    String formattedGlobalReport = globalReport.formatForMarkdown(true);
+    String formattedGlobalReport = globalReport.formatForMarkdown();
 
     assertThat(formattedGlobalReport).isEqualTo(desiredMarkdown);
   }

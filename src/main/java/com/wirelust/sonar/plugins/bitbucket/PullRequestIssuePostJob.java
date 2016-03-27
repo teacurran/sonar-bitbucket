@@ -63,7 +63,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
   public void executeOn(Project project, SensorContext context) {
     LOGGER.info("PullRequestIssuePostJob:{}", project != null ? project.toString() : "null");
 
-    GlobalReport report = new GlobalReport(markDownUtils);
+    GlobalReport report = new GlobalReport(markDownUtils, config);
     Map<InputFile, Map<Integer, StringBuilder>> commentsToBeAddedByLine = processIssues(report);
 
     updateReviewComments(commentsToBeAddedByLine);
@@ -72,7 +72,7 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
     LOGGER.info("report: hasNewIssues:{}", report.hasNewIssue());
     if (report.hasNewIssue()) {
-      pullRequestFacade.addGlobalComment(report.formatForMarkdown(config.reportNotInDiff()));
+      pullRequestFacade.addGlobalComment(report.formatForMarkdown());
     } else {
       pullRequestFacade.addGlobalComment("SonarQube reported no issues");
     }
