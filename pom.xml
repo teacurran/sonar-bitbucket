@@ -11,25 +11,19 @@
 
   <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
   <artifactId>sonar-bitbucket-plugin</artifactId>
-  <name>SonarQube :: Bitbucket Plugin</name>
-  <packaging>sonar-plugin</packaging>
   <version>1.0-SNAPSHOT</version>
-  <description>Provide some integration between Bitbucket and SonarQube</description>
+  <packaging>sonar-plugin</packaging>
+
+  <name>SonarQube :: Bitbucket Plugin</name>
+  <description>Integration between Bitbucket and SonarQube</description>
   <url>https://github.com/teacurran/sonar-bitbucket</url>
+  <issueManagement>
+    <system>Github</system>
+    <url>https://github.com/teacurran/sonar-bitbucket/issues</url>
+  </issueManagement>
   <inceptionYear>2015</inceptionYear>
-
-  <properties>
-    <sonar.version>4.5.2</sonar.version>
-    <sonar.pluginName>BitBucket</sonar.pluginName>
-    <sonar.pluginClass>com.wirelust.sonar.plugins.bitbucket.BitBucketPlugin</sonar.pluginClass>
-
-    <version.resteasy>3.0.13.Final</version.resteasy>
-
-  </properties>
-
   <organization>
-    <name>SonarSource</name>
-    <url>http://www.sonarsource.com</url>
+    <name>Approaching Pi</name>
   </organization>
 
   <licenses>
@@ -58,6 +52,15 @@
     <developerConnection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</developerConnection>
     <url>https://github.com/teacurran/sonar-bitbucket.git</url>
   </scm>
+
+  <properties>
+    <sonar.version>4.5.2</sonar.version>
+    <sonar.pluginName>BitBucket</sonar.pluginName>
+    <sonar.pluginClass>com.wirelust.sonar.plugins.bitbucket.BitBucketPlugin</sonar.pluginClass>
+
+    <version.resteasy>3.0.13.Final</version.resteasy>
+
+  </properties>
 
   <dependencies>
     <dependency>
