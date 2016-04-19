@@ -11,7 +11,7 @@
 
   <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
   <artifactId>sonar-bitbucket-plugin</artifactId>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
   <packaging>sonar-plugin</packaging>
 
   <name>SonarQube :: Bitbucket Plugin</name>
@@ -51,7 +51,7 @@
     <connection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</connection>
     <developerConnection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</developerConnection>
     <url>https://github.com/teacurran/sonar-bitbucket.git</url>
-    <tag>v1.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
