@@ -6,12 +6,12 @@
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
     <version>23</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
   <artifactId>sonar-bitbucket-plugin</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>sonar-plugin</packaging>
 
   <name>SonarQube :: Bitbucket Plugin</name>
@@ -51,6 +51,7 @@
     <connection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</connection>
     <developerConnection>scm:git:git@github.com:teacurran/sonar-bitbucket.git</developerConnection>
     <url>https://github.com/teacurran/sonar-bitbucket.git</url>
+    <tag>v1.0</tag>
   </scm>
 
   <properties>
@@ -65,8 +66,8 @@
   <dependencies>
     <dependency>
       <groupId>com.wirelust.bitbucket.client</groupId>
-      <artifactId>wirelust-bitbucket-api-client</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <artifactId>bitbucket-api-client</artifactId>
+      <version>1.0</version>
       <scope>compile</scope>
     </dependency>
 
