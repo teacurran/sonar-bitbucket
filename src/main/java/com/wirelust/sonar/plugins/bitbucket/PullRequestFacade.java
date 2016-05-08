@@ -40,10 +40,7 @@ import javax.xml.bind.DatatypeConverter;
 import com.google.common.annotations.VisibleForTesting;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
-import com.wirelust.bitbucket.client.representations.Comment;
-import com.wirelust.bitbucket.client.representations.CommentList;
-import com.wirelust.bitbucket.client.representations.PullRequest;
-import com.wirelust.bitbucket.client.representations.User;
+import com.wirelust.bitbucket.client.representations.*;
 import com.wirelust.bitbucket.client.representations.auth.AccessToken;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.client.JacksonConfigurationProvider;
@@ -151,6 +148,13 @@ public class PullRequestFacade implements BatchComponent {
       pullRequestResponse.close();
 
       LOGGER.info("Starting analysis of pull request: " + pullRequest.getId());
+
+      BuildStatus buildStatus = new BuildStatus();
+      buildStatus.setKey(config.ciKey());
+      buildStatus.setName(config.ciName());
+      buildStatus.setState(BuildStatus.STATE.INPROGRESS);
+      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+        pullRequest.getSource().getCommit().getHash(), buildStatus);
 
       loadExistingReviewComments();
       loadPatch(pullRequest);
@@ -440,10 +444,22 @@ public class PullRequestFacade implements BatchComponent {
     String repoOwner = config.repositoryOwner();
     String repo = config.repository();
 
+    BuildStatus buildStatus = new BuildStatus();
+    buildStatus.setKey(config.ciKey());
+    buildStatus.setName(config.ciName());
+
     Response response;
     if (isApproved) {
+      buildStatus.setState(BuildStatus.STATE.SUCCESSFUL);
+      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+        pullRequest.getSource().getCommit().getHash(), buildStatus);
+
       response = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
     } else {
+      buildStatus.setState(BuildStatus.STATE.FAILED);
+      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+        pullRequest.getSource().getCommit().getHash(), buildStatus);
+
       response = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
     }
 

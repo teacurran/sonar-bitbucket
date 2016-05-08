@@ -148,4 +148,28 @@ public class BitBucketPluginConfiguration implements BatchComponent {
   public String issueThreshold() {
     return settings.getString(BitBucketPlugin.BITBUCKET_ISSUE_THRESHOLD);
   }
+
+  public String ciKey() {
+    String value = settings.getString(BitBucketPlugin.BITBUCKET_CI_KEY);
+    if (value == null || value.isEmpty()) {
+      value = BitBucketPlugin.DEFAULT_CI_KEY_NAME;
+    }
+    return value;
+  }
+
+  public String ciName() {
+    String value = settings.getString(BitBucketPlugin.BITBUCKET_CI_NAME);
+    if (value == null || value.isEmpty()) {
+      value = BitBucketPlugin.DEFAULT_CI_KEY_NAME;
+    }
+    return value;
+  }
+
+  public String ciURL() {
+    String value = settings.getString(BitBucketPlugin.BITBUCKET_CI_URL);
+    if (value == null || value.isEmpty()) {
+      value = BitBucketPlugin.DEFAULT_CI_URL;
+    }
+    return value;
+  }
 }

@@ -83,6 +83,31 @@ import org.sonar.api.rule.Severity;
     project = false,
     module = false),
   @Property(
+    key = BitBucketPlugin.BITBUCKET_CI_KEY,
+    name = "BitBucket CI Key",
+    description = "Key for the CI job, must be unique across all your jobs. defaults to \"SonarQube\"",
+    type = PropertyType.STRING,
+    global = true,
+    project = true
+  ),
+  @Property(
+    key = BitBucketPlugin.BITBUCKET_CI_NAME,
+    name = "BitBucket CI Name",
+    description = "The name that appears on bitbucket for the build. defaults to \"" +
+      BitBucketPlugin.DEFAULT_CI_KEY_NAME + "\"",
+    type = PropertyType.STRING,
+    global = true,
+    project = true
+  ),
+  @Property(
+    key = BitBucketPlugin.BITBUCKET_CI_URL,
+    name = "BitBucket CI URL",
+    description = "The url for the status. defaults to \"" + BitBucketPlugin.DEFAULT_CI_URL + "\"",
+    type = PropertyType.STRING,
+    global = true,
+    project = true
+  ),
+  @Property(
     key = BitBucketPlugin.BITBUCKET_ISSUE_THRESHOLD,
     name = "BitBucket Issue Threshold",
     description = "Severity at which a pull request can be approved",
@@ -114,6 +139,12 @@ public class BitBucketPlugin extends SonarPlugin {
   public static final String BITBUCKET_PULL_REQUEST = "sonar.bitbucket.pullRequest";
   public static final String BITBUCKET_ISSUE_THRESHOLD = "sonar.bitbucket.threshold";
   public static final String BITBUCKET_REPORT_NOT_IN_PR = "sonar.bitbucket.reportNotInDiff";
+  public static final String BITBUCKET_CI_KEY = "sonar.bitbucket.ci.key";
+  public static final String BITBUCKET_CI_NAME = "sonar.bitbucket.ci.name";
+  public static final String BITBUCKET_CI_URL = "sonar.bitbucket.ci.url";
+
+  public static final String DEFAULT_CI_KEY_NAME = "SonarQube";
+  public static final String DEFAULT_CI_URL = "http://sonarqube.org";
 
   @Override
   public List getExtensions() {
