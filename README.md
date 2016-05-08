@@ -23,7 +23,19 @@ https://github.com/teacurran/wirelust-bitbucket-api
 
 # Installation
 
-1. copy sonar-bitbucket-plugin-1.0-SNAPSHOT.jar to {SONAR_HOME}/extensions/plugins
+The latest release can be found in maven central:
+
+    <dependency>
+        <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
+        <artifactId>sonar-bitbucket-plugin</artifactId>
+        <version>1.0</version>
+    </dependency>
+
+You can download the Jar file directly at:
+
+    http://repo1.maven.org/maven2/com/wirelust/sonar/plugins/bitbucket/sonar-bitbucket-plugin/1.0/sonar-bitbucket-plugin-1.0.jar
+
+1. copy the jar file to {SONAR_HOME}/extensions/plugins
 2. restart SonarQube
 
 # Usage
