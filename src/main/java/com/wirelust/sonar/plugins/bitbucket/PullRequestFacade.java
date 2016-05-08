@@ -79,6 +79,7 @@ public class PullRequestFacade implements BatchComponent {
   private Map<String, Map<Integer, Comment>> existingReviewCommentsByLocationByFile = new HashMap<>();
 
   private PullRequest pullRequest;
+  private Commit commit;
 
   private List<Long> commentsToBeDeleted = new ArrayList<>();
   private File gitBaseDir;
@@ -147,16 +148,16 @@ public class PullRequestFacade implements BatchComponent {
       setPullRequest(pullRequestResponse.readEntity(PullRequest.class));
       pullRequestResponse.close();
 
+      // The pull request commit has a shortened hash which doesn't work for setting status
+      // so let's get the commit from the API so we have the full hash
+      Response commitResponse = bitbucketClient.getCommitByOwnerRepoRevision(
+        config.repositoryOwner(), config.repository(), pullRequest.getSource().getCommit().getHash());
+      setCommit(commitResponse.readEntity(Commit.class));
+      commitResponse.close();
+
       LOGGER.info("Starting analysis of pull request: " + pullRequest.getId());
 
-      BuildStatus buildStatus = new BuildStatus();
-      buildStatus.setKey(config.ciKey());
-      buildStatus.setName(config.ciName());
-      buildStatus.setState(BuildStatus.STATE.INPROGRESS);
-      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
-        pullRequest.getSource().getCommit().getHash(), buildStatus);
-      statusResponse.close();
-
+      createOrUpdateBuildStatus(BuildStatus.STATE.INPROGRESS);
       loadExistingReviewComments();
       loadPatch(pullRequest);
 
@@ -225,6 +226,8 @@ public class PullRequestFacade implements BatchComponent {
   void setPullRequest(PullRequest pullRequest) {
     this.pullRequest = pullRequest;
   }
+
+  void setCommit(Commit commit) { this.commit = commit; }
 
   public File findGitBaseDir(@Nullable File baseDir) {
     if (baseDir == null) {
@@ -440,28 +443,41 @@ public class PullRequestFacade implements BatchComponent {
     createOrUpdateApproval(false);
   }
 
+  private void createOrUpdateBuildStatus(BuildStatus.STATE state) {
+    BuildStatusPost buildStatus = new BuildStatusPost();
+    buildStatus.setKey(config.ciKey());
+    buildStatus.setName(config.ciName());
+    buildStatus.setUrl(config.ciURL());
+    buildStatus.setState(state);
+
+    Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+      commit.getHash(), buildStatus);
+    statusResponse.close();
+
+    Response.Status buildStatusStatus = Response.Status.fromStatusCode(statusResponse.getStatus());
+    if (buildStatusStatus != Response.Status.OK
+      && buildStatusStatus != Response.Status.NO_CONTENT
+      && buildStatusStatus != Response.Status.CREATED
+      && buildStatusStatus != Response.Status.ACCEPTED
+    ) {
+      throw new IllegalStateException(
+        String.format("Unable to update pull request build status. expected:%d, got:%d",
+          200, statusResponse.getStatus()));
+    }
+  }
+
   private void createOrUpdateApproval(boolean isApproved) {
 
     String repoOwner = config.repositoryOwner();
     String repo = config.repository();
 
-    BuildStatus buildStatus = new BuildStatus();
-    buildStatus.setKey(config.ciKey());
-    buildStatus.setName(config.ciName());
-
     Response approvalResponse;
     if (isApproved) {
-      buildStatus.setState(BuildStatus.STATE.SUCCESSFUL);
-      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
-        pullRequest.getSource().getCommit().getHash(), buildStatus);
-      statusResponse.close();
+      createOrUpdateBuildStatus(BuildStatus.STATE.SUCCESSFUL);
 
       approvalResponse = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
     } else {
-      buildStatus.setState(BuildStatus.STATE.FAILED);
-      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
-        pullRequest.getSource().getCommit().getHash(), buildStatus);
-      statusResponse.close();
+      createOrUpdateBuildStatus(BuildStatus.STATE.FAILED);
 
       approvalResponse = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
     }
@@ -472,14 +488,16 @@ public class PullRequestFacade implements BatchComponent {
     // because we are not first checking if a request is already approved before sending the calls
     // if a request is approved and another approval is sent it will return 409
     // if you try to delete an approval that doesn't exist you will get a 404
-    if (approvalResponse.getStatus() != Response.Status.OK.getStatusCode()
-      && approvalResponse.getStatus() != Response.Status.NO_CONTENT.getStatusCode()
-      && approvalResponse.getStatus() != Response.Status.CONFLICT.getStatusCode()
-      && approvalResponse.getStatus() != Response.Status.NOT_FOUND.getStatusCode()) {
+    Response.Status approvalStatus = Response.Status.fromStatusCode(approvalResponse.getStatus());
+    if (approvalStatus != Response.Status.OK
+      && approvalStatus != Response.Status.NO_CONTENT
+      && approvalStatus != Response.Status.CONFLICT
+      && approvalStatus != Response.Status.NOT_FOUND) {
       throw new IllegalStateException(
         String.format("Unable to update pull request approval status. expected:%d, got:%d",
           200, approvalResponse.getStatus()));
     }
+
   }
 
   @CheckForNull
