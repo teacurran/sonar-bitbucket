@@ -317,14 +317,21 @@ public class PullRequestFacade implements BatchComponent {
 
   /**
    * Test if the P/R contains the provided file path (ie this file was added/modified/updated)
+   * @param inputFile file to check
+   * @return true if the pull request contains the provided file path
    */
+  @VisibleForTesting
   public boolean hasFile(InputFile inputFile) {
     return modifiedLinesByFile.containsKey(getPath(inputFile));
   }
 
   /**
    * Test if the P/R contains the provided line for the file path (ie this line is "visible" in diff)
+   * @param inputFile file to check
+   * @param line the file to check for
+   * @return true if the pull request has the line of the error
    */
+  @VisibleForTesting
   public boolean hasFileLine(InputFile inputFile, int line) {
     return modifiedLinesByFile.get(getPath(inputFile)).contains(line);
   }
