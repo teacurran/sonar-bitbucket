@@ -153,8 +153,9 @@ public class PullRequestFacade implements BatchComponent {
       buildStatus.setKey(config.ciKey());
       buildStatus.setName(config.ciName());
       buildStatus.setState(BuildStatus.STATE.INPROGRESS);
-      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
         pullRequest.getSource().getCommit().getHash(), buildStatus);
+      statusResponse.close();
 
       loadExistingReviewComments();
       loadPatch(pullRequest);
@@ -448,34 +449,36 @@ public class PullRequestFacade implements BatchComponent {
     buildStatus.setKey(config.ciKey());
     buildStatus.setName(config.ciName());
 
-    Response response;
+    Response approvalResponse;
     if (isApproved) {
       buildStatus.setState(BuildStatus.STATE.SUCCESSFUL);
-      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
         pullRequest.getSource().getCommit().getHash(), buildStatus);
+      statusResponse.close();
 
-      response = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
+      approvalResponse = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
     } else {
       buildStatus.setState(BuildStatus.STATE.FAILED);
-      bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
+      Response statusResponse = bitbucketClient.postBuildStatus(config.repositoryOwner(), config.repository(),
         pullRequest.getSource().getCommit().getHash(), buildStatus);
+      statusResponse.close();
 
-      response = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
+      approvalResponse = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
     }
 
-    response.close();
+    approvalResponse.close();
 
     // we are allowing Conflict (409) and Not Found (404)
     // because we are not first checking if a request is already approved before sending the calls
     // if a request is approved and another approval is sent it will return 409
     // if you try to delete an approval that doesn't exist you will get a 404
-    if (response.getStatus() != Response.Status.OK.getStatusCode()
-      && response.getStatus() != Response.Status.NO_CONTENT.getStatusCode()
-      && response.getStatus() != Response.Status.CONFLICT.getStatusCode()
-      && response.getStatus() != Response.Status.NOT_FOUND.getStatusCode()) {
+    if (approvalResponse.getStatus() != Response.Status.OK.getStatusCode()
+      && approvalResponse.getStatus() != Response.Status.NO_CONTENT.getStatusCode()
+      && approvalResponse.getStatus() != Response.Status.CONFLICT.getStatusCode()
+      && approvalResponse.getStatus() != Response.Status.NOT_FOUND.getStatusCode()) {
       throw new IllegalStateException(
         String.format("Unable to update pull request approval status. expected:%d, got:%d",
-          200, response.getStatus()));
+          200, approvalResponse.getStatus()));
     }
   }
 
