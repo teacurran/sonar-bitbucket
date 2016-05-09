@@ -1,0 +1,88 @@
+# SonarQube BitBucket Plugin
+
+This is a fork of the SonarQube GitHub Plugin to offer the same functionality to BitBucket.
+
+https://github.com/SonarCommunity/sonar-github
+
+For BitBucket API calls, I have put together a client library here:
+https://github.com/teacurran/wirelust-bitbucket-api
+
+# Building
+
+1. Check-out https://github.com/teacurran/wirelust-bitbucket-api[wirelust-bitbucket-api]
+2. build wirelust-bitbucket-api
+
+    mvn install
+
+3. build this project:
+
+    mvn package
+
+# Installation
+
+The latest release can be found in maven central:
+
+```xml
+    <dependency>
+        <groupId>com.wirelust.sonar.plugins.bitbucket</groupId>
+        <artifactId>sonar-bitbucket-plugin</artifactId>
+        <version>1.0</version>
+    </dependency>
+```
+
+You can download the Jar file directly at:
+
+ http://repo1.maven.org/maven2/com/wirelust/sonar/plugins/bitbucket/sonar-bitbucket-plugin/1.0/sonar-bitbucket-plugin-1.0.jar
+
+1. copy the jar file to {SONAR_HOME}/extensions/plugins
+2. restart SonarQube
+
+# Usage
+
+1. Install plugin in Sonarqube
+2. Run sonar via maven in preview mode
+
+    mvn clean sonar:sonar
+        -Dsonar.analysis.mode=preview
+        -Dsonar.bitbucket.login={YOUR_BITBUCKET_USER}
+        -Dsonar.bitbucket.password={YOUR_PASSWORD}
+        -Dsonar.bitbucket.repository={REPOSITORY_OWNER}/{REPOSITORY}
+        -Dsonar.bitbucket.pullRequest={PULL_REQUEST_NUMBER}
+        -Dsonar.bitbucket.client.id={BITBUCKET_CLIENT_ID}
+        -Dsonar.bitbucket.client.secret={BITBUCKET_CLIENT_SECRET}
+
+3. You may have to disable some other plugins in order to get it to work, here are the settings I have to use:
+
+    -Dissueassignplugin.enabeld=false
+    -Dsonar.scm-stats.enabled=false
+    -Dsonar.scm.enabled=false
+    -Dsonar.bitbucket.repository=teacurran/intl-litpro
+    -Dsonar.preview.excludePlugins=buildstability,devcockpit,pdfreport,report,views,jira,buildbreaker,issueassign,scm,scm-stats
+    -Dsonar.issuesReport.console.enable=true
+
+# Parameters
+
+Most of these options will appear in SonarQube in your global or project settings.
+
+The only two settings that need to be passed in via maven are:
+
+* sonar.bitbucket.repository
+* sonar.bitbucket.pullRequest
+
+[cols="2*", options="header"]
+|======================================================================================================================================================================================
+| Parameter name                               | Description
+| sonar.bitbucket.login                        | Username for logging into BitBucket
+| sonar.bitbucket.password                     | Password for logging into BitBucket
+| sonar.bitbucket.apiKey                       | If you want to create pull request comments for Sonar issues under your team account, provide the API key for your team account here.
+| sonar.bitbucket.client.id                    | Bitbucket client id, required in addition to login
+| sonar.bitbucket.client.secret                | Bitbucket client secret, required in addition to login
+| sonar.bitbucket.repository                   | Bitbucket repository in the format: owner/repository
+| sonar.bitbucket.pullRequest                  | Pull request ID you wish to analyze
+| sonar.bitbucket.threshold                    | Minimum issue severity in which a pull request can be approved. [BLOCKER, CRITICAL, MAJOR, MINOR, INFO] default: MAJOR
+| sonar.bitbucket.reportNotInDiff              | Report on errors that are not caused by changes in the pull request. [true, false] default: true
+| sonar.bitbucket.ci.key                       | Key for the CI job, must be unique across all your jobs. defaults to "SonarQube"
+| sonar.bitbucket.ci.name                      | The name that appears on bitbucket for the build. defaults to "SonarQube"
+| sonar.bitbucket.ci.url                       | The url for the status. defaults to "http://sonarqube.org"
+|======================================================================================================================================================================================
+
