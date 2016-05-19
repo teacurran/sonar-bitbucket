@@ -59,12 +59,6 @@ public class GlobalReport {
     return sb.toString();
   }
 
-  public String getStatusDescription() {
-    StringBuilder sb = new StringBuilder();
-    printNewIssuesInline(sb);
-    return sb.toString();
-  }
-
   private int newIssues(String s) {
     return newIssuesBySeverity[Severity.ALL.indexOf(s)];
   }
@@ -81,35 +75,6 @@ public class GlobalReport {
       printNewIssuesForMarkdown(sb, Severity.INFO);
     } else {
       sb.append("no issues.");
-    }
-  }
-
-  private void printNewIssuesInline(StringBuilder sb) {
-    sb.append("SonarQube reported ");
-    int newIssues = newIssues(Severity.BLOCKER) + newIssues(Severity.CRITICAL) + newIssues(Severity.MAJOR) + newIssues(Severity.MINOR) + newIssues(Severity.INFO);
-    if (newIssues > 0) {
-      sb.append(newIssues).append(" issue").append(newIssues > 1 ? "s" : "").append(",");
-      int newCriticalOrBlockerIssues = newIssues(Severity.BLOCKER) + newIssues(Severity.CRITICAL);
-      if (newCriticalOrBlockerIssues > 0) {
-        printNewIssuesInline(sb, Severity.CRITICAL);
-        printNewIssuesInline(sb, Severity.BLOCKER);
-      } else {
-        sb.append(" no critical nor blocker");
-      }
-    } else {
-      sb.append("no issues");
-    }
-  }
-
-  private void printNewIssuesInline(StringBuilder sb, String severity) {
-    int issueCount = newIssues(severity);
-    if (issueCount > 0) {
-      if (sb.charAt(sb.length() - 1) == ',') {
-        sb.append(" with ");
-      } else {
-        sb.append(" and ");
-      }
-      sb.append(issueCount).append(" ").append(severity.toLowerCase());
     }
   }
 

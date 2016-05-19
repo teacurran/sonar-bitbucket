@@ -21,6 +21,7 @@ package com.wirelust.sonar.plugins.bitbucket.client;
 
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.plugins.providers.DataSourceProvider;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,6 +45,15 @@ public class RestEasyClientBuilderTest {
     ClientHttpEngine httpEngine = client.httpEngine();
 
     Assert.assertTrue(httpEngine instanceof ApacheHttpClient4Engine);
+  }
+
+  @Test
+  public void shouldBeAbleToRegisterPlugins() throws Exception {
+    ResteasyProviderFactory resteasyProviderFactory = ResteasyProviderFactory.getInstance();
+
+    ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
+
+    Assert.assertTrue(resteasyProviderFactory.getProviderClasses().contains(DataSourceProvider.class));
   }
 
 }
