@@ -447,7 +447,7 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   private void createOrUpdateBuildStatus(BuildStatus.STATE state) {
-    BuildStatusPost buildStatus = new BuildStatusPost();
+    BuildStatus buildStatus = new BuildStatus();
     buildStatus.setKey(config.ciKey());
     buildStatus.setName(config.ciName());
     buildStatus.setUrl(config.ciURL());
