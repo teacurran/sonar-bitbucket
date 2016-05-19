@@ -95,7 +95,7 @@ public class PullRequestFacadeTest {
       }
     }
 
-    assertThat(patch.getFiles().size() == 7);
+    assertThat(patch.getFiles().size() == 7).isTrue();
   }
 
 }

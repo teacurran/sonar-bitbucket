@@ -37,7 +37,6 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
@@ -48,6 +47,9 @@ import org.jboss.resteasy.client.jaxrs.i18n.Messages;
  * Date: 07-Dec-2015
  *
  * @author T. Curran
+ *
+ * This class differs from ResteasyClientBuilder in that it uses LaxRedirectStrategy for apache HTTP Client.
+ * This allows the client to follow a redirect request on a POST action. This is required for Bitbucket login to work.
  */
 public class ResteasyClientBuilder extends org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder {
 
