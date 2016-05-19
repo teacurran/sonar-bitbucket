@@ -38,6 +38,10 @@ public class ResteasyRegisterBuiltin {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ResteasyRegisterBuiltin.class);
 
+  private ResteasyRegisterBuiltin() {
+    // class should not be instantiated
+  }
+
   public static void registerDefaultProviders(ResteasyProviderFactory factory) throws IOException {
     Enumeration<URL> resources = ResteasyRegisterBuiltin.class.getClassLoader().getResources("META-INF/services/" +
       Providers.class.getName());
