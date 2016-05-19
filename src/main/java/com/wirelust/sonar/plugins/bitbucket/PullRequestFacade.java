@@ -513,6 +513,9 @@ public class PullRequestFacade implements BatchComponent {
         "/diff/#chg-" +
         getPath(inputPath);
 
+      if (issueLine != null) {
+        url = url + "T" + issueLine.toString();
+      }
       return url;
     }
 

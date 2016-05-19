@@ -31,6 +31,7 @@ import java.util.Map;
 import com.wirelust.bitbucket.client.representations.Branch;
 import com.wirelust.bitbucket.client.representations.Link;
 import com.wirelust.bitbucket.client.representations.PullRequest;
+import com.wirelust.sonar.plugins.bitbucket.jackson.JacksonObjectMapper;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
@@ -49,36 +50,24 @@ public class PullRequestFacadeTest {
   public TemporaryFolder temp = new TemporaryFolder();
 
   @Test
-  @Ignore
   public void testGetWebUrl() throws Exception {
 
-    File gitBasedir = temp.newFolder();
+    InputStream pullRequestStream = getClass().getClassLoader().getResourceAsStream("mocks/pull_request_1.json");
 
+    JacksonObjectMapper objectMapper = JacksonObjectMapper.get();
+    PullRequest pullRequest = objectMapper.readValue(pullRequestStream, PullRequest.class);
+
+    File gitBasedir = temp.newFolder();
     PullRequestFacade facade = new PullRequestFacade(mock(BitBucketPluginConfiguration.class));
     facade.setGitBaseDir(gitBasedir);
-
-    PullRequest pullRequest = mock(PullRequest.class);
-
-    Map<String, List<Link>> prLinkMap = new HashMap<>();
-    List<Link> prLinks = new ArrayList<>();
-    Link link = new Link();
-    link.setHref("https://bitbucket.org/teacurran/test-repo/pull-requests/3/");
-    prLinks.add(link);
-    prLinkMap.put("self", prLinks);
-
-    when(pullRequest.getLinks()).thenReturn(prLinkMap);
-
-    Branch branch = mock(Branch.class);
-    when(branch.getName()).thenReturn("branch-name");
-
-    when(pullRequest.getSource().getBranch()).thenReturn(branch);
+    facade.setPullRequest(pullRequest);
 
     //facade.setPullRequest(pr);
     InputPath inputPath = mock(InputPath.class);
     when(inputPath.file()).thenReturn(new File(gitBasedir, "src/main/Foo.java"));
 
     assertThat(facade.getWebUrl(inputPath, 10))
-      .isEqualTo("https://bitbucket.org/teacurran/test-repo/pull-requests/3/branch-name/diff#chg-src/main/Foo.java");
+      .isEqualTo("https://staging.bitbucket.org/api/2.0/repositories/bitbucket/bitbucket/pullrequests/3767/dev/diff/#chg-src/main/Foo.javaT10");
   }
 
   @Test
