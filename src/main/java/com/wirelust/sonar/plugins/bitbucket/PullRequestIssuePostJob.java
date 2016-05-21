@@ -1,7 +1,7 @@
 /*
  * SonarQube :: Bitbucket Plugin
- * Copyright (C) 2015 SonarSource
- * sonarqube@googlegroups.com
+ * Copyright (C) 2015-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
@@ -29,6 +29,7 @@ import org.sonar.api.batch.SensorContext;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.issue.ProjectIssues;
+import org.sonar.api.measures.Metrics;
 import org.sonar.api.resources.Project;
 
 /**
@@ -40,16 +41,19 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
 
   private final PullRequestFacade pullRequestFacade;
   private final ProjectIssues projectIssues;
+  private final Metrics metrics;
   private final BitBucketPluginConfiguration config;
   private final InputFileCache inputFileCache;
   private final MarkDownUtils markDownUtils;
 
   public PullRequestIssuePostJob(BitBucketPluginConfiguration bitBucketPluginConfiguration,
                                  PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
+                                 Metrics metrics,
                                  InputFileCache inputFileCache, MarkDownUtils markDownUtils) {
     this.config = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
     this.projectIssues = projectIssues;
+    this.metrics = metrics;
     this.inputFileCache = inputFileCache;
     this.markDownUtils = markDownUtils;
   }

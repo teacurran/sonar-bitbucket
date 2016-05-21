@@ -1,7 +1,7 @@
 /*
  * SonarQube :: Bitbucket Plugin
- * Copyright (C) 2015 SonarSource
- * sonarqube@googlegroups.com
+ * Copyright (C) 2015-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
@@ -54,7 +54,7 @@ public class PullRequestProjectBuilder extends ProjectBuilder {
   }
 
   private void checkMode() {
-    boolean isIssues = settings.getBoolean(CoreProperties.DRY_RUN) || CoreProperties.ANALYSIS_MODE_PREVIEW.equals(settings.getString(CoreProperties.ANALYSIS_MODE))
+    boolean isIssues = CoreProperties.ANALYSIS_MODE_PREVIEW.equals(settings.getString(CoreProperties.ANALYSIS_MODE))
       || CoreProperties.ANALYSIS_MODE_INCREMENTAL.equals(settings.getString(CoreProperties.ANALYSIS_MODE))
       // 5.2+
       || "issues".equals(settings.getString(CoreProperties.ANALYSIS_MODE));

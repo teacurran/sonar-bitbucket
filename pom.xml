@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>23</version>
+    <version>32</version>
     <relativePath />
   </parent>
 
@@ -55,7 +55,7 @@
   </scm>
 
   <properties>
-    <sonar.version>4.5.2</sonar.version>
+    <sonar.version>5.2</sonar.version>
     <sonar.pluginName>BitBucket</sonar.pluginName>
     <sonar.pluginClass>com.wirelust.sonar.plugins.bitbucket.BitBucketPlugin</sonar.pluginClass>
 
@@ -94,10 +94,16 @@
       <artifactId>org.eclipse.jgit</artifactId>
       <version>4.1.1.201511131810-r</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>commons-logging</artifactId>
+          <groupId>commons-logging</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
-      <groupId>org.codehaus.sonar</groupId>
+      <groupId>org.sonarsource.sonarqube</groupId>
       <artifactId>sonar-plugin-api</artifactId>
       <version>${sonar.version}</version>
       <scope>provided</scope>

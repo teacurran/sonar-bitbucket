@@ -109,7 +109,7 @@ index 0000000..91129f2
 +++ b/it/it-tests/src/test/java/it/analysis/ReportDumpTest.java
 @@ -0,0 +1,65 @@
 +/*
-+ * Copyright (C) 2009-2014 SonarSource SA
++ * Copyright (C) 2009-2014 SonarSource
 + * All rights reserved
 + * mailto:contact AT sonarsource DOT com
 + */
