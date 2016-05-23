@@ -21,6 +21,7 @@ package com.wirelust.sonar.plugins.bitbucket;
 
 import java.io.File;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -32,11 +33,7 @@ import org.sonar.api.utils.MessageException;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 public class PullRequestProjectBuilderTest {
 
@@ -72,16 +69,6 @@ public class PullRequestProjectBuilderTest {
   }
 
   @Test
-  public void shouldNotFailIfDryRun() {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
-    settings.setProperty(CoreProperties.ANALYSIS_MODE_PREVIEW, "true");
-
-    pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
-
-    verify(facade).init(eq(1), any(File.class));
-  }
-
-  @Test
   public void shouldNotFailIfPreview() {
     settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_PREVIEW);
@@ -92,13 +79,14 @@ public class PullRequestProjectBuilderTest {
   }
 
   @Test
-  public void shouldNotFailIfIncremental() {
+  @Ignore
+  public void shouldFailIfIncremental() {
     settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
     settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_INCREMENTAL);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
 
-    verify(facade).init(eq(1), any(File.class));
+    verify(facade, never()).init(eq(1), any(File.class));
   }
 
   @Test

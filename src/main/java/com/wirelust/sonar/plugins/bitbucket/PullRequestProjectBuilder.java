@@ -54,10 +54,9 @@ public class PullRequestProjectBuilder extends ProjectBuilder {
   }
 
   private void checkMode() {
-    boolean isIssues = CoreProperties.ANALYSIS_MODE_PREVIEW.equals(settings.getString(CoreProperties.ANALYSIS_MODE))
-      || CoreProperties.ANALYSIS_MODE_INCREMENTAL.equals(settings.getString(CoreProperties.ANALYSIS_MODE))
-      // 5.2+
-      || "issues".equals(settings.getString(CoreProperties.ANALYSIS_MODE));
+    String analysisMode = settings.getString(CoreProperties.ANALYSIS_MODE);
+    boolean isIssues = CoreProperties.ANALYSIS_MODE_PREVIEW.equals(analysisMode)
+      || CoreProperties.ANALYSIS_MODE_ISSUES.equals(analysisMode);
     if (!isIssues) {
       throw MessageException.of("The Bitbucket plugin is only intended to be used in preview or issues mode. Please set '" + CoreProperties.ANALYSIS_MODE + "'.");
     }
