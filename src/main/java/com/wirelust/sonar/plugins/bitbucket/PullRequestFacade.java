@@ -41,7 +41,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.*;
-import com.wirelust.bitbucket.client.representations.auth.AccessToken;
+import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.client.JacksonConfigurationProvider;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
@@ -70,9 +70,6 @@ import org.sonar.api.scan.filesystem.PathResolver;
 public class PullRequestFacade implements BatchComponent {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestFacade.class);
-
-  @VisibleForTesting
-  static final String COMMIT_CONTEXT = "sonarqube";
 
   private final BitBucketPluginConfiguration config;
   private Map<String, List<Integer>> modifiedLinesByFile;
@@ -136,7 +133,7 @@ public class PullRequestFacade implements BatchComponent {
         return;
       }
 
-      AccessToken accessToken = response.readEntity(AccessToken.class);
+      OauthAccessToken accessToken = response.readEntity(OauthAccessToken.class);
       LOGGER.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
       bitbucketClient = getV2Client(accessToken.getAccessToken());
@@ -160,7 +157,7 @@ public class PullRequestFacade implements BatchComponent {
 
       LOGGER.info("Starting analysis of pull request: " + pullRequest.getId());
 
-      createOrUpdateBuildStatus(BuildStatus.STATE.INPROGRESS);
+      createOrUpdateBuildStatus(BuildStatus.State.INPROGRESS);
       loadExistingReviewComments();
       loadPatch(pullRequest);
 
@@ -446,8 +443,8 @@ public class PullRequestFacade implements BatchComponent {
     createOrUpdateApproval(false);
   }
 
-  private void createOrUpdateBuildStatus(BuildStatus.STATE state) {
-    BuildStatusPost buildStatus = new BuildStatusPost();
+  private void createOrUpdateBuildStatus(BuildStatus.State state) {
+    BuildStatus buildStatus = new BuildStatus();
     buildStatus.setKey(config.ciKey());
     buildStatus.setName(config.ciName());
     buildStatus.setUrl(config.ciURL());
@@ -476,11 +473,11 @@ public class PullRequestFacade implements BatchComponent {
 
     Response approvalResponse;
     if (isApproved) {
-      createOrUpdateBuildStatus(BuildStatus.STATE.SUCCESSFUL);
+      createOrUpdateBuildStatus(BuildStatus.State.SUCCESSFUL);
 
       approvalResponse = bitbucketClient.postPullRequestApproval(repoOwner, repo, pullRequest.getId());
     } else {
-      createOrUpdateBuildStatus(BuildStatus.STATE.FAILED);
+      createOrUpdateBuildStatus(BuildStatus.State.FAILED);
 
       approvalResponse = bitbucketClient.deletePullRequestApproval(repoOwner, repo, pullRequest.getId());
     }
