@@ -43,8 +43,8 @@ import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.*;
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
+import com.wirelust.sonar.plugins.bitbucket.client.CustomResteasyClientBuilder;
 import com.wirelust.sonar.plugins.bitbucket.client.JacksonConfigurationProvider;
-import com.wirelust.sonar.plugins.bitbucket.client.ResteasyClientBuilder;
 import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
 import org.eclipse.jgit.diff.Edit;
 import org.eclipse.jgit.patch.FileHeader;
@@ -167,7 +167,7 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   public BitbucketAuthClient getAuthClient() {
-    ResteasyClient client = new ResteasyClientBuilder()
+    ResteasyClient client = new CustomResteasyClientBuilder()
       .providerFactory(resteasyProviderFactory)
       .build();
 
@@ -200,7 +200,7 @@ public class PullRequestFacade implements BatchComponent {
 
   public BitbucketV2Client getV2Client(final String authToken) {
 
-    ResteasyClient client = new ResteasyClientBuilder()
+    ResteasyClient client = new CustomResteasyClientBuilder()
       .providerFactory(resteasyProviderFactory)
       .build();
 

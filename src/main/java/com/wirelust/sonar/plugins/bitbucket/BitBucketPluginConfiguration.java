@@ -70,12 +70,10 @@ public class BitBucketPluginConfiguration implements BatchComponent {
 
   public String repository() {
     String repositoryRaw = repositoryRaw();
-    if (repositoryRaw != null) {
-      if (repositoryRaw.contains("/")) {
-        String[] repoSplit = repositoryRaw.split("/");
-        if (repoSplit.length > 1) {
-          return repoSplit[1];
-        }
+    if (repositoryRaw != null && repositoryRaw.contains("/")) {
+      String[] repoSplit = repositoryRaw.split("/");
+      if (repoSplit.length > 1) {
+        return repoSplit[1];
       }
     }
     return null;
@@ -83,12 +81,10 @@ public class BitBucketPluginConfiguration implements BatchComponent {
 
   public String repositoryOwner() {
     String repositoryRaw = repositoryRaw();
-    if (repositoryRaw != null) {
-      if (repositoryRaw.contains("/")) {
-        String[] repoSplit = repositoryRaw.split("/");
-        if (repoSplit.length > 0) {
-          return repoSplit[0];
-        }
+    if (repositoryRaw != null && repositoryRaw.contains("/")) {
+      String[] repoSplit = repositoryRaw.split("/");
+      if (repoSplit.length > 0) {
+        return repoSplit[0];
       }
     }
     return null;

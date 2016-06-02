@@ -44,9 +44,6 @@ import static org.mockito.Mockito.when;
 
 public class PullRequestIssuePostJobTest {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
-
   private PullRequestIssuePostJob pullRequestIssuePostJob;
   private PullRequestFacade pullRequestFacade;
   private ProjectIssues issues;

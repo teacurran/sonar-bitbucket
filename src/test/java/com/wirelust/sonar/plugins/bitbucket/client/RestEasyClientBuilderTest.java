@@ -38,13 +38,13 @@ public class RestEasyClientBuilderTest {
   public void shouldBeAbleToInitilizeReasteasyClientBuilder() {
     ResteasyProviderFactory resteasyProviderFactory = ResteasyProviderFactory.getInstance();
 
-    ResteasyClient client = new ResteasyClientBuilder()
+    ResteasyClient client = new CustomResteasyClientBuilder()
       .providerFactory(resteasyProviderFactory)
       .build();
 
     ClientHttpEngine httpEngine = client.httpEngine();
 
-    Assert.assertTrue(httpEngine instanceof ApacheHttpClient4Engine);
+    Assert.assertTrue(httpEngine instanceof CustomApacheHttpClient4Engine);
   }
 
   @Test

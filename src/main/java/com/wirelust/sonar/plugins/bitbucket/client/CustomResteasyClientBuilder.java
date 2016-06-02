@@ -40,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.PassthroughTrustManager;
 import org.jboss.resteasy.client.jaxrs.i18n.Messages;
 
@@ -48,13 +49,12 @@ import org.jboss.resteasy.client.jaxrs.i18n.Messages;
  *
  * @author T. Curran
  *
- * This class differs from ResteasyClientBuilder in that it uses LaxRedirectStrategy for apache HTTP Client.
+ * This class differs from CustomResteasyClientBuilder in that it uses LaxRedirectStrategy for apache HTTP Client.
  * This allows the client to follow a redirect request on a POST action. This is required for Bitbucket login to work.
  */
-public class ResteasyClientBuilder extends org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder {
+public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
 
   protected ClientHttpEngine initDefaultEngine() {
-    CloseableHttpClient httpClient = null;
     RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 
     X509HostnameVerifier verifier = null;
@@ -70,6 +70,8 @@ public class ResteasyClientBuilder extends org.jboss.resteasy.client.jaxrs.Reste
           break;
         case STRICT:
           verifier = new StrictHostnameVerifier();
+          break;
+        default:
           break;
       }
     }
@@ -109,13 +111,13 @@ public class ResteasyClientBuilder extends org.jboss.resteasy.client.jaxrs.Reste
         requestConfigBuilder.setConnectTimeout(connectionCheckoutTimeoutMs);
       }
 
-      httpClient = HttpClientBuilder.create()
+      CloseableHttpClient httpClient = HttpClientBuilder.create()
         .setDefaultRequestConfig(requestConfigBuilder.build())
         .setSSLSocketFactory(sslsf)
         .setRedirectStrategy(new LaxRedirectStrategy())
         .build();
 
-      ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
+      CustomApacheHttpClient4Engine engine = new CustomApacheHttpClient4Engine(httpClient);
       engine.setResponseBufferSize(responseBufferSize);
       engine.setHostnameVerifier(verifier);
       // this may be null.  We can't really support this with Apache Client.

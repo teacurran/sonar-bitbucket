@@ -54,9 +54,9 @@ public class ResteasyRegisterBuiltin {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
         for (String line; (line = reader.readLine()) != null; ) {
-          line = line.trim();
-          if (line.length() > 0) {
-            classes.add(line);
+          String trimmedLine = line.trim();
+          if (trimmedLine.length() > 0) {
+            classes.add(trimmedLine);
           }
         }
       }

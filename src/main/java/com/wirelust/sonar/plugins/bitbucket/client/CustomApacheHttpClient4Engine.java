@@ -28,6 +28,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.jboss.resteasy.client.jaxrs.i18n.Messages;
 import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 
@@ -36,9 +37,9 @@ import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
  *
  * @author T. Curran
  */
-public class ApacheHttpClient4Engine extends org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine {
+public class CustomApacheHttpClient4Engine extends ApacheHttpClient4Engine {
 
-  public ApacheHttpClient4Engine(HttpClient httpClient) {
+  public CustomApacheHttpClient4Engine(HttpClient httpClient) {
     this.httpClient = httpClient;
     this.createdHttpClient = true;
   }
