@@ -32,7 +32,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.BuildStatus;
@@ -150,7 +149,6 @@ public class PullRequestFacade implements BatchComponent {
     }
   }
 
-  @VisibleForTesting
   void setPullRequest(PullRequest pullRequest) {
     this.pullRequest = pullRequest;
   }
@@ -168,7 +166,6 @@ public class PullRequestFacade implements BatchComponent {
     return findGitBaseDir(baseDir.getParentFile());
   }
 
-  @VisibleForTesting
   void setGitBaseDir(File gitBaseDir) {
     this.gitBaseDir = gitBaseDir;
   }
@@ -260,7 +257,6 @@ public class PullRequestFacade implements BatchComponent {
    * @param inputFile file to check
    * @return true if the pull request contains the provided file path
    */
-  @VisibleForTesting
   public boolean hasFile(InputFile inputFile) {
     return modifiedLinesByFile.containsKey(getPath(inputFile));
   }
@@ -271,7 +267,6 @@ public class PullRequestFacade implements BatchComponent {
    * @param line the file to check for
    * @return true if the pull request has the line of the error
    */
-  @VisibleForTesting
   public boolean hasFileLine(InputFile inputFile, int line) {
     return modifiedLinesByFile.get(getPath(inputFile)).contains(line);
   }
