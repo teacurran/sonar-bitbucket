@@ -1,7 +1,7 @@
 /*
  * SonarQube :: Bitbucket Plugin
- * Copyright (C) 2015 SonarSource
- * sonarqube@googlegroups.com
+ * Copyright (C) 2015-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
@@ -26,11 +26,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
+import org.sonar.api.batch.measure.Metric;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.issue.ProjectIssues;
+import org.sonar.api.measures.Metrics;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.Severity;
 
@@ -68,13 +70,15 @@ public class PullRequestIssuePostJobTest {
 
     when(config.reportNotInDiff()).thenReturn(true);
 
-    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, issues, cache, new MarkDownUtils(settings));
+
+    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, issues, null,
+      cache, new MarkDownUtils(settings));
   }
 
   @Test
   public void testPullRequestAnalysisWithNewIssues() {
     Issue newIssue = mock(Issue.class);
-    DefaultInputFile inputFile1 = new DefaultInputFile("src/Foo.php");
+    DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
     when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
     when(newIssue.line()).thenReturn(1);
@@ -95,7 +99,7 @@ public class PullRequestIssuePostJobTest {
     when(pullRequestFacade.getWebUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
 
     Issue fileNotInPR = mock(Issue.class);
-    DefaultInputFile inputFile2 = new DefaultInputFile("src/Foo2.php");
+    DefaultInputFile inputFile2 = new DefaultInputFile("foo", "src/Foo2.php");
     when(cache.byKey("foo:src/Foo2.php")).thenReturn(inputFile2);
     when(fileNotInPR.componentKey()).thenReturn("foo:src/Foo2.php");
     when(fileNotInPR.line()).thenReturn(1);
@@ -159,7 +163,7 @@ public class PullRequestIssuePostJobTest {
   @Test
   public void testPullRequestAnalysisWithNewCriticalIssues() {
     Issue newIssue = mock(Issue.class);
-    DefaultInputFile inputFile1 = new DefaultInputFile("src/Foo.php");
+    DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
     when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
     when(newIssue.line()).thenReturn(1);
@@ -181,7 +185,7 @@ public class PullRequestIssuePostJobTest {
   @Test
   public void testPullRequestAnalysisWithNewIssuesNoBlockerNorCritical() {
     Issue newIssue = mock(Issue.class);
-    DefaultInputFile inputFile1 = new DefaultInputFile("src/Foo.php");
+    DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
     when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
     when(newIssue.line()).thenReturn(1);
@@ -203,7 +207,7 @@ public class PullRequestIssuePostJobTest {
   @Test
   public void testPullRequestAnalysisWithNewBlockerAndCriticalIssues() {
     Issue newIssue = mock(Issue.class);
-    DefaultInputFile inputFile1 = new DefaultInputFile("src/Foo.php");
+    DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
     when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
     when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
     when(newIssue.line()).thenReturn(1);
