@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,30 +30,24 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.xml.bind.DatatypeConverter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
-import com.wirelust.bitbucket.client.representations.*;
+import com.wirelust.bitbucket.client.representations.BuildStatus;
+import com.wirelust.bitbucket.client.representations.Comment;
+import com.wirelust.bitbucket.client.representations.CommentList;
+import com.wirelust.bitbucket.client.representations.Commit;
+import com.wirelust.bitbucket.client.representations.PullRequest;
+import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
-import com.wirelust.sonar.plugins.bitbucket.client.CustomResteasyClientBuilder;
-import com.wirelust.sonar.plugins.bitbucket.client.JacksonConfigurationProvider;
-import com.wirelust.sonar.plugins.bitbucket.client.ResteasyRegisterBuiltin;
+import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
 import org.eclipse.jgit.diff.Edit;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
-import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
-import org.jboss.resteasy.client.jaxrs.ProxyConfig;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
@@ -82,25 +75,16 @@ public class PullRequestFacade implements BatchComponent {
   private File gitBaseDir;
   private String authenticatedUser;
   private BitbucketV2Client bitbucketClient;
-  ResteasyProviderFactory resteasyProviderFactory;
+  private ApiClientFactory apiClientFactory;
 
-  ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
-
-  public PullRequestFacade(BitBucketPluginConfiguration config) {
+  public PullRequestFacade(BitBucketPluginConfiguration config, ApiClientFactory apiClientFactory) {
     this.config = config;
+    this.apiClientFactory = apiClientFactory;
   }
 
   public void init(int pullRequestNumber, File projectBaseDir) {
     if (findGitBaseDir(projectBaseDir) == null) {
       throw new IllegalStateException("Unable to find Git root directory. Is " + projectBaseDir + " part of a Git repository?");
-    }
-
-    // We need to register Resteasy providers ourselves to make sure they are bound to the correct classloader
-    resteasyProviderFactory = ResteasyProviderFactory.getInstance();
-    try {
-      ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
-    } catch (IOException e) {
-      LOGGER.error("unable to register jax-rs providers", e);
     }
 
     String login = config.login();
@@ -124,7 +108,7 @@ public class PullRequestFacade implements BatchComponent {
 
     try {
 
-      BitbucketAuthClient authClient = getAuthClient();
+      BitbucketAuthClient authClient = apiClientFactory.getAuthClient();
       Response response = authClient.getTokenByUsernamePassword("password", config.login(), config.password());
       LOGGER.info("received bitbucket response to login:{}", response.getStatus());
 
@@ -136,7 +120,7 @@ public class PullRequestFacade implements BatchComponent {
       OauthAccessToken accessToken = response.readEntity(OauthAccessToken.class);
       LOGGER.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
-      bitbucketClient = getV2Client(accessToken.getAccessToken());
+      bitbucketClient = apiClientFactory.getV2Client(accessToken.getAccessToken());
 
       Response userResponse = bitbucketClient.getUser();
       User user = userResponse.readEntity(User.class);
@@ -164,62 +148,6 @@ public class PullRequestFacade implements BatchComponent {
     } catch (Exception e) {
       throw new IllegalStateException("Unable to perform Bitbucket WS operation", e);
     }
-  }
-
-  public BitbucketAuthClient getAuthClient() {
-    ResteasyClient client = new CustomResteasyClientBuilder()
-      .providerFactory(resteasyProviderFactory)
-      .build();
-
-    client.register(JacksonConfigurationProvider.class);
-
-    client.register(new ClientRequestFilter() {
-      @Override
-      public void filter(ClientRequestContext clientRequestContext) throws IOException {
-        MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
-
-        String basicAuthentication;
-        String token = config.clientId() + ":" + config.clientSecret();
-        try {
-            basicAuthentication =  "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            throw new IllegalStateException("Cannot encode with UTF-8", ex);
-        }
-
-        LOGGER.debug("basic auth:{}", basicAuthentication);
-
-        headers.add("Authorization", basicAuthentication);
-      }
-    });
-
-    ResteasyWebTarget target = client.target(config.tokenEndpoint());
-
-    return ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
-  }
-
-
-  public BitbucketV2Client getV2Client(final String authToken) {
-
-    ResteasyClient client = new CustomResteasyClientBuilder()
-      .providerFactory(resteasyProviderFactory)
-      .build();
-
-    client.register(JacksonConfigurationProvider.class);
-
-    if (authToken != null) {
-      client.register(new ClientRequestFilter() {
-        @Override
-        public void filter(ClientRequestContext requestContext) throws IOException {
-
-          //String base64Token = Base64.encodeBase64String(token.getBytes(StandardCharsets.UTF_8));
-          requestContext.getHeaders().add("Authorization", "Bearer " + authToken);
-        }
-      });
-    }
-
-    ResteasyWebTarget target = client.target(config.endpoint());
-
-    return ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
   }
 
   @VisibleForTesting
@@ -292,6 +220,10 @@ public class PullRequestFacade implements BatchComponent {
     Response commentResponse = bitbucketClient.getPullRequestCommentsWithPage(
       config.repositoryOwner(), config.repository(), pullRequest.getId(), page);
     CommentList commentList = commentResponse.readEntity(CommentList.class);
+
+    if (commentList.getValues() == null) {
+      return;
+    }
 
     for (Comment comment : commentList.getValues()) {
       if (!authenticatedUser.equals(comment.getUser().getUsername())) {

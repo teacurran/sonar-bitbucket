@@ -61,6 +61,7 @@
 
     <version.jacoco>0.7.6.201602180812</version.jacoco>
     <version.junit>4.12</version.junit>
+    <version.mockito>1.10.19</version.mockito>
     <version.resteasy>3.0.13.Final</version.resteasy>
     <version.sonar-jacoco-listener>3.11</version.sonar-jacoco-listener>
     <version.surefire>2.19.1</version.surefire>
@@ -140,8 +141,8 @@
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>1.9.5</version>
+      <artifactId>mockito-all</artifactId>
+      <version>${version.mockito}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

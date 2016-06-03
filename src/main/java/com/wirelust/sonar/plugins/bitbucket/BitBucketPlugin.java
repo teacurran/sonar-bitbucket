@@ -21,6 +21,8 @@ package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.Arrays;
 import java.util.List;
+
+import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Properties;
 import org.sonar.api.Property;
@@ -149,6 +151,7 @@ public class BitBucketPlugin extends SonarPlugin {
   @Override
   public List getExtensions() {
     return Arrays.asList(
+      ApiClientFactory.class,
       PullRequestIssuePostJob.class,
       BitBucketPluginConfiguration.class,
       PullRequestProjectBuilder.class,
