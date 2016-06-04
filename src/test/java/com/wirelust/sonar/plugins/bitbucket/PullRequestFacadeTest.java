@@ -58,6 +58,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PullRequestFacadeTest {
+  public static final String MOCK_USERNAME = "evzijst";
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -122,6 +123,7 @@ public class PullRequestFacadeTest {
 
     // getUser Response
     User user = new User();
+    user.setUsername(MOCK_USERNAME);
     when(getUserResponse.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(getUserResponse.readEntity(User.class)).thenReturn(user);
     when(bitbucketV2Client.getUser()).thenReturn(getUserResponse);
@@ -150,7 +152,9 @@ public class PullRequestFacadeTest {
       any(BuildStatus.class))).thenReturn(statusResponse);
 
     // get Comments List
-    CommentList commentList = new CommentList();
+    InputStream commentsStream = getClass().getClassLoader()
+      .getResourceAsStream("mocks/api/2.0/repositories/owner/repo/commit/revision/comments.json");
+    CommentList commentList = objectMapper.readValue(commentsStream, CommentList.class);
     when(commentsResponse.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(commentsResponse.readEntity(CommentList.class)).thenReturn(commentList);
     when(bitbucketV2Client.getPullRequestCommentsWithPage(any(String.class), any(String.class), any(Long.class),
