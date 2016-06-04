@@ -22,6 +22,7 @@ package com.wirelust.sonar.plugins.bitbucket;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 
 import javax.ws.rs.core.Response;
 
@@ -35,9 +36,11 @@ import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
 import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
 import com.wirelust.sonar.plugins.bitbucket.jackson.JacksonObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,7 +49,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
+import org.sonar.api.batch.fs.internal.DefaultInputFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -56,6 +61,9 @@ public class PullRequestFacadeTest {
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+  @Rule
+  public TemporaryFolder nonGitFolder = new TemporaryFolder();
 
   @Mock
   BitbucketAuthClient bitbucketAuthClient;
@@ -162,6 +170,89 @@ public class PullRequestFacadeTest {
     pullRequestFacade.init(123, temporaryFolder.getRoot());
   }
 
+  @Test
+  public void initShouldFailWithoutGitDirectory() {
+    try {
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(123, nonGitFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains("Unable to find Git root directory"));
+    }
+  }
+
+  @Test
+  public void initShouldFailWithoutLogin() {
+    try {
+      when(configuration.login()).thenReturn(null);
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null"));
+    }
+  }
+
+  @Test
+  public void initShouldFailWithoutPassword() {
+    try {
+      when(configuration.password()).thenReturn(null);
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_PASSWORD + " cannot be null"));
+    }
+  }
+
+  @Test
+  public void initShouldFailWithoutRepository() {
+    try {
+      when(configuration.repository()).thenReturn(null);
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_REPO + " cannot be null"));
+    }
+  }
+
+  @Test
+  public void initShouldFailWithoutPullRequestNumber() {
+    try {
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(0, temporaryFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_PULL_REQUEST + " cannot be null"));
+    }
+  }
+
+  @Test
+  public void shouldBeAbleToLoadPullRequestPatch() throws Exception {
+    InputStream diffStream = getClass().getClassLoader().getResourceAsStream("unified_diff.txt");
+    StringWriter writer = new StringWriter();
+    IOUtils.copy(diffStream, writer);
+
+    when(diffResponse.readEntity(String.class)).thenReturn(writer.toString());
+
+    DefaultInputFile inputFile = new DefaultInputFile("", "sonar-ws/pom.xml");
+    inputFile.setModuleBaseDir(temporaryFolder.getRoot().toPath());
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+    pullRequestFacade.loadPatch(pullRequest);
+    Assert.assertTrue(pullRequestFacade.hasFile(inputFile));
+  }
 
   @Test
   public void testGetWebUrl() throws Exception {

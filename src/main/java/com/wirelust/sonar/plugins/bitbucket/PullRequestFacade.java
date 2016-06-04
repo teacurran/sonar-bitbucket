@@ -170,7 +170,7 @@ public class PullRequestFacade implements BatchComponent {
     this.gitBaseDir = gitBaseDir;
   }
 
-  private void loadPatch(PullRequest pullRequest) throws IOException {
+  public void loadPatch(PullRequest pullRequest) throws IOException {
 
     Response response = bitbucketClient.getPullRequestDiff(config.repositoryOwner(), config.repository(), pullRequest.getId());
     LOGGER.debug("received bitbucket response getPullRequestDiff:{}", response.getStatus());
