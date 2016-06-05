@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonar.api.BatchComponent;
+import org.sonar.api.batch.BatchSide;
 import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputFile;
 
@@ -30,7 +31,8 @@ import org.sonar.api.batch.fs.InputFile;
  * This is a temporary solution before being able to use new postjob API in SQ 5.2.
  */
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class InputFileCache implements BatchComponent {
+@BatchSide
+public class InputFileCache {
 
   private final Map<String, InputFile> inputFileByKey = new HashMap<>();
 

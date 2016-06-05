@@ -26,6 +26,7 @@ import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class BitBucketPluginConfigurationTest {
 
@@ -90,4 +91,27 @@ public class BitBucketPluginConfigurationTest {
     assertThat(config.endpoint()).isEqualTo("http://myprivate-endpoint");
   }
 
+  @Test
+  public void shouldBeAbleToDefaultCiKey() {
+    assertEquals(BitBucketPlugin.DEFAULT_CI_KEY_NAME, config.ciKey());
+
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CI_KEY, "repository_key");
+    assertEquals("repository_key", config.ciKey());
+  }
+
+  @Test
+  public void shouldBeAbleToDefaultCiName() {
+    assertEquals(BitBucketPlugin.DEFAULT_CI_KEY_NAME, config.ciName());
+
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CI_NAME, "repository_name");
+    assertEquals("repository_name", config.ciName());
+  }
+
+  @Test
+  public void shouldBeAbleToDefaultCiUrl() {
+    assertEquals(BitBucketPlugin.DEFAULT_CI_URL, config.ciURL());
+
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CI_URL, "ci_url");
+    assertEquals("ci_url", config.ciURL());
+  }
 }
