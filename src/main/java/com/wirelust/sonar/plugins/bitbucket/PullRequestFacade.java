@@ -211,9 +211,6 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   private void loadExistingReviewCommentsWithPage(int page) throws IOException {
-    if (page <= 0) {
-      throw new IllegalArgumentException("page must be 1 or greater");
-    }
     Response commentResponse = bitbucketClient.getPullRequestCommentsWithPage(
       config.repositoryOwner(), config.repository(), pullRequest.getId(), page);
     CommentList commentList = commentResponse.readEntity(CommentList.class);
