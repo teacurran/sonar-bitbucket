@@ -75,11 +75,7 @@ public class ApiClientFactory {
 
         String basicAuthentication;
         String token = config.clientId() + ":" + config.clientSecret();
-        try {
-            basicAuthentication =  "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            throw new IllegalStateException("Cannot encode with UTF-8", ex);
-        }
+        basicAuthentication =  "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
 
         LOGGER.debug("basic auth:{}", basicAuthentication);
 
@@ -88,7 +84,6 @@ public class ApiClientFactory {
     });
 
     ResteasyWebTarget target = client.target(config.tokenEndpoint());
-
     return ProxyBuilder.proxy(BitbucketAuthClient.class, target, resteasyProxyConfig);
   }
 
@@ -101,8 +96,6 @@ public class ApiClientFactory {
       client.register(new ClientRequestFilter() {
         @Override
         public void filter(ClientRequestContext requestContext) throws IOException {
-
-          //String base64Token = Base64.encodeBase64String(token.getBytes(StandardCharsets.UTF_8));
           requestContext.getHeaders().add("Authorization", "Bearer " + authToken);
         }
       });
@@ -111,10 +104,6 @@ public class ApiClientFactory {
     ResteasyWebTarget target = client.target(config.endpoint());
 
     return ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
-  }
-
-  public ClientHttpEngine getClientHttpEngine() {
-    return clientHttpEngine;
   }
 
   public void setClientHttpEngine(ClientHttpEngine clientHttpEngine) {
