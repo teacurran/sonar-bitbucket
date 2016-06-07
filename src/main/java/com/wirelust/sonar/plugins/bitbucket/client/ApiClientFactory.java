@@ -29,6 +29,7 @@ import javax.xml.bind.DatatypeConverter;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.sonar.plugins.bitbucket.BitBucketPluginConfiguration;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ProxyBuilder;
 import org.jboss.resteasy.client.jaxrs.ProxyConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -50,6 +51,8 @@ public class ApiClientFactory {
   ResteasyProviderFactory resteasyProviderFactory = ResteasyProviderFactory.getInstance();
   ProxyConfig resteasyProxyConfig = new ProxyConfig(this.getClass().getClassLoader(), null, null);
 
+  ClientHttpEngine clientHttpEngine;
+
   public ApiClientFactory(BitBucketPluginConfiguration config) {
     this.config = config;
 
@@ -62,11 +65,8 @@ public class ApiClientFactory {
   }
 
   public BitbucketAuthClient getAuthClient() {
-    ResteasyClient client = new CustomResteasyClientBuilder()
-      .providerFactory(resteasyProviderFactory)
-      .build();
 
-    client.register(JacksonConfigurationProvider.class);
+    ResteasyClient client = getRestEasyClient();
 
     client.register(new ClientRequestFilter() {
       @Override
@@ -95,11 +95,7 @@ public class ApiClientFactory {
 
   public BitbucketV2Client getV2Client(final String authToken) {
 
-    ResteasyClient client = new CustomResteasyClientBuilder()
-      .providerFactory(resteasyProviderFactory)
-      .build();
-
-    client.register(JacksonConfigurationProvider.class);
+    ResteasyClient client = getRestEasyClient();
 
     if (authToken != null) {
       client.register(new ClientRequestFilter() {
@@ -117,4 +113,26 @@ public class ApiClientFactory {
     return ProxyBuilder.proxy(BitbucketV2Client.class, target, resteasyProxyConfig);
   }
 
+  public ClientHttpEngine getClientHttpEngine() {
+    return clientHttpEngine;
+  }
+
+  public void setClientHttpEngine(ClientHttpEngine clientHttpEngine) {
+    this.clientHttpEngine = clientHttpEngine;
+  }
+
+  private ResteasyClient getRestEasyClient() {
+
+    CustomResteasyClientBuilder clientBuilder = new CustomResteasyClientBuilder();
+    clientBuilder.providerFactory(resteasyProviderFactory);
+
+    if (clientHttpEngine != null) {
+      clientBuilder.httpEngine(clientHttpEngine);
+    }
+    ResteasyClient client = clientBuilder.build();
+
+    client.register(JacksonConfigurationProvider.class);
+
+    return client;
+  }
 }

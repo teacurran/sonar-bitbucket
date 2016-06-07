@@ -22,7 +22,6 @@ package com.wirelust.sonar.plugins.bitbucket.client;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
-import com.wirelust.bitbucket.client.Constants;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.plugins.providers.DataSourceProvider;

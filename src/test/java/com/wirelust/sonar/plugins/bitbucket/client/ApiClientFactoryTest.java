@@ -1,26 +1,24 @@
 package com.wirelust.sonar.plugins.bitbucket.client;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import javax.ws.rs.client.ClientRequestFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.ws.rs.core.Response;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
+import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.sonar.plugins.bitbucket.BitBucketPlugin;
 import com.wirelust.sonar.plugins.bitbucket.BitBucketPluginConfiguration;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.internal.ClientConfiguration;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
+import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
+import org.jboss.resteasy.client.jaxrs.internal.ClientRequestHeaders;
 import org.jboss.resteasy.client.jaxrs.internal.ClientResponse;
-import org.jboss.resteasy.client.jaxrs.internal.proxy.extractors.ClientResponseProxy;
-import org.jboss.resteasy.spi.HeaderValueProcessor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Date: 06-Jun-2016
@@ -32,37 +30,107 @@ public class ApiClientFactoryTest {
   private Settings settings;
   private BitBucketPluginConfiguration configuration;
   private ApiClientFactory apiClientFactory;
+  ClientResponse mockClientResponse;
 
   @Before
   public void prepare() {
     settings = new Settings(new PropertyDefinitions(BitBucketPlugin.class));
     configuration = new BitBucketPluginConfiguration(settings);
     apiClientFactory = new ApiClientFactory(configuration);
+
+    mockClientResponse = new ClientResponse(null) {
+      @Override
+      protected InputStream getInputStream() {
+        return null;
+      }
+
+      @Override
+      protected void setInputStream(InputStream is) {
+
+      }
+
+      @Override
+      public void releaseConnection() throws IOException {
+
+      }
+    };
+    mockClientResponse.setStatus(Response.Status.OK.getStatusCode());
   }
 
   @Test
   public void shouldBeAbleToGetAuthClient() throws Exception {
     settings.setProperty(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT, "http://127.0.0.1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_ID, "client_id");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_SECRET, "client_secret");
+
+    apiClientFactory.setClientHttpEngine(new ClientHttpEngine() {
+                                           @Override
+                                           public SSLContext getSslContext() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public HostnameVerifier getHostnameVerifier() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public ClientResponse invoke(ClientInvocation request) {
+                                             ClientRequestHeaders clientRequestHeaders = request.getHeaders();
+                                             String authHeader = clientRequestHeaders.getHeader("Authorization");
+                                             Assert.assertEquals("BASIC Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=", authHeader);
+
+                                             return mockClientResponse;
+                                           }
+
+                                           @Override
+                                           public void close() {
+
+                                           }
+                                         });
+
 
     BitbucketAuthClient authClient = apiClientFactory.getAuthClient();
 
     Response response = authClient.getTokenByUsernamePassword("password", "user", "password");
+    Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
 
-    assertTrue(response instanceof ClientResponse);
-    ClientResponse clientResponse = (ClientResponse)response;
-    Method processorMethod = ClientResponse.class.getDeclaredMethod("getHeaderValueProcessor");
-    processorMethod.setAccessible(true);
-    HeaderValueProcessor headerValueProcessor = (HeaderValueProcessor)processorMethod.invoke(clientResponse, null);
+  @Test
+  public void shouldBeAbleToGetV2Client() throws Exception {
+    settings.setProperty(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT, "http://127.0.0.1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_ID, "client_id");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_SECRET, "client_secret");
+
+    apiClientFactory.setClientHttpEngine(new ClientHttpEngine() {
+                                           @Override
+                                           public SSLContext getSslContext() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public HostnameVerifier getHostnameVerifier() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public ClientResponse invoke(ClientInvocation request) {
+                                             ClientRequestHeaders clientRequestHeaders = request.getHeaders();
+                                             String authHeader = clientRequestHeaders.getHeader("Authorization");
+                                             Assert.assertEquals("Bearer token-xxx123", authHeader);
+                                             return mockClientResponse;
+                                           }
+
+                                           @Override
+                                           public void close() {
+
+                                           }
+                                         });
 
 
-    clientResponse.toString();
-    //assertTrue(response.getClass().isAssignableFrom(ClientResponseProxy.class));
+    BitbucketV2Client v2Client = apiClientFactory.getV2Client("token-xxx123");
 
-    //assertTrue(authClient.getClass().isAssignableFrom(ResteasyClient.class));
-
-    //ClientResponse resteasyClient = (ClientResponse)authClient;
-    //ClientConfiguration clientConfiguration = (ClientConfiguration)resteasyClient.getConfiguration();
-
-    //ClientRequestFilter[] requestFilters = clientConfiguration.getRequestFilters(ApiClientFactoryTest.class, null);
+    Response response = v2Client.getAllRepositories();
+    Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 }
