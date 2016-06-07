@@ -22,7 +22,7 @@ package com.wirelust.sonar.plugins.bitbucket;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.sonar.api.BatchComponent;
+
 import org.sonar.api.batch.BatchSide;
 import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputFile;

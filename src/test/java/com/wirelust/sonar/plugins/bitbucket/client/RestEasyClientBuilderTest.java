@@ -19,6 +19,10 @@
  */
 package com.wirelust.sonar.plugins.bitbucket.client;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
+
+import com.wirelust.bitbucket.client.Constants;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.plugins.providers.DataSourceProvider;
@@ -54,6 +58,18 @@ public class RestEasyClientBuilderTest {
     ResteasyRegisterBuiltin.registerDefaultProviders(resteasyProviderFactory);
 
     Assert.assertTrue(resteasyProviderFactory.getProviderClasses().contains(DataSourceProvider.class));
+  }
+
+  @Test
+  /**
+   * This method simply instantiates a private constructor to ensure code coverage for it so the
+   * coverage reports aren't diminished
+   */
+  public void testResteasyRegisterConstructorIsPrivate() throws Exception {
+    Constructor<ResteasyRegisterBuiltin> constructor = ResteasyRegisterBuiltin.class.getDeclaredConstructor();
+    Assert.assertTrue(Modifier.isPrivate(constructor.getModifiers()));
+    constructor.setAccessible(true);
+    constructor.newInstance();
   }
 
 }
