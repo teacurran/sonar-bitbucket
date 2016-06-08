@@ -28,7 +28,9 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -47,6 +49,8 @@ import org.jboss.resteasy.client.jaxrs.engines.PassthroughTrustManager;
  */
 public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
 
+  public static final TrustSelfSignedStrategy TRUST_STRATEGY_INSTANCE = new TrustSelfSignedStrategy();
+
   protected ClientHttpEngine initDefaultEngine() {
     RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 
@@ -64,12 +68,17 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
       } else if (theContext != null) {
         sslsf = new SSLConnectionSocketFactory(theContext, verifier);
       } else if (clientKeyStore != null || truststore != null) {
-        // todo: figure out if we need this
-        //sslsf = new SSLConnectionSocketFactory(SSLSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword,
-        // truststore, null, verifier);
+        SSLContext ctx = SSLContexts.custom()
+          .useProtocol(SSLConnectionSocketFactory.TLS)
+          .setSecureRandom(null)
+          .loadKeyMaterial(clientKeyStore,
+            clientPrivateKeyPassword != null ? clientPrivateKeyPassword.toCharArray() : null)
+          .loadTrustMaterial(truststore, TRUST_STRATEGY_INSTANCE)
+          .build();
+        sslsf = new SSLConnectionSocketFactory(ctx, verifier);
       } else {
         //sslsf = new SSLSocketFactory(SSLContext.getInstance(SSLSocketFactory.TLS), verifier);
-        final SSLContext tlsContext = SSLContext.getInstance(SSLSocketFactory.TLS);
+        final SSLContext tlsContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
         tlsContext.init(null, null, null);
         sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
       }
@@ -79,13 +88,11 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
         requestConfigBuilder.setSocketTimeout((int) socketTimeoutUnits.toMillis(socketTimeout));
       }
       if (establishConnectionTimeout > -1) {
-        // TODO, check to see if this is accidentally swapped with setConnectTimeout
-        requestConfigBuilder.setConnectionRequestTimeout((int) establishConnectionTimeoutUnits.toMillis
-          (establishConnectionTimeout));
-
+        requestConfigBuilder
+          .setConnectTimeout((int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
       }
       if (connectionCheckoutTimeoutMs > -1) {
-        requestConfigBuilder.setConnectTimeout(connectionCheckoutTimeoutMs);
+        requestConfigBuilder.setConnectionRequestTimeout(connectionCheckoutTimeoutMs);
       }
 
       CloseableHttpClient httpClient = HttpClientBuilder.create()
