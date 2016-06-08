@@ -19,6 +19,7 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
@@ -36,11 +37,13 @@ public class BitBucketPluginConfiguration implements BatchComponent {
   private Settings settings;
   private Pattern gitSshPattern;
   private Pattern gitHttpPattern;
+  private ResourceBundle localization;
 
   public BitBucketPluginConfiguration(Settings settings) {
     this.settings = settings;
     this.gitSshPattern = Pattern.compile(".*@bitbucket\\.com:(.*/.*)\\.git");
     this.gitHttpPattern = Pattern.compile("https?://bitbucket\\.com/(.*/.*)\\.git");
+    localization = ResourceBundle.getBundle("org.sonar.l10n.bitbucket");
   }
 
   public int pullRequestNumber() {
@@ -86,19 +89,6 @@ public class BitBucketPluginConfiguration implements BatchComponent {
       if (repoSplit.length > 0) {
         return repoSplit[0];
       }
-    }
-    return null;
-  }
-
-  @CheckForNull
-  private String parseGitUrl(String urlOrRepo) {
-    Matcher matcher = gitSshPattern.matcher(urlOrRepo);
-    if (matcher.matches()) {
-      return matcher.group(1);
-    }
-    matcher = gitHttpPattern.matcher(urlOrRepo);
-    if (matcher.matches()) {
-      return matcher.group(1);
     }
     return null;
   }
@@ -168,4 +158,26 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     }
     return value;
   }
+
+  public String message(String key) {
+    return localization.getString(key);
+  }
+
+  public String message(String key, String... format) {
+    return String.format(localization.getString(key), format);
+  }
+
+  @CheckForNull
+  private String parseGitUrl(String urlOrRepo) {
+    Matcher matcher = gitSshPattern.matcher(urlOrRepo);
+    if (matcher.matches()) {
+      return matcher.group(1);
+    }
+    matcher = gitHttpPattern.matcher(urlOrRepo);
+    if (matcher.matches()) {
+      return matcher.group(1);
+    }
+    return null;
+  }
+
 }

@@ -52,6 +52,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
+import org.sonar.api.config.Settings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -75,7 +76,7 @@ public class PullRequestFacadeTest {
   @Mock
   ApiClientFactory apiClientFactory;
 
-  @Mock
+  Settings settings;
   BitBucketPluginConfiguration configuration;
 
   @Mock
@@ -110,9 +111,8 @@ public class PullRequestFacadeTest {
     // create a git file in the temporary folder because init will look for one
     temporaryFolder.newFile(".git");
 
-    when(configuration.login()).thenReturn("login");
-    when(configuration.password()).thenReturn("password");
-    when(configuration.repository()).thenReturn("test");
+    settings = new Settings();
+    configuration = new BitBucketPluginConfiguration(settings);
 
     // getAccessToken Response
     OauthAccessToken accessToken = new OauthAccessToken();
@@ -170,12 +170,16 @@ public class PullRequestFacadeTest {
 
   @Test
   public void shouldBeAbleToInitPullRequestFacade() throws Exception {
+    setDefaultConfig();
+
     PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
     pullRequestFacade.init(123, temporaryFolder.getRoot());
   }
 
   @Test
   public void initShouldFailWithoutGitDirectory() {
+    setDefaultConfig();
+
     try {
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
       pullRequestFacade.init(123, nonGitFolder.getRoot());
@@ -189,8 +193,10 @@ public class PullRequestFacadeTest {
 
   @Test
   public void initShouldFailWithoutLogin() {
+    setDefaultConfig();
+    settings.removeProperty(BitBucketPlugin.BITBUCKET_LOGIN);
+
     try {
-      when(configuration.login()).thenReturn(null);
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
       pullRequestFacade.init(123, temporaryFolder.getRoot());
 
@@ -203,8 +209,10 @@ public class PullRequestFacadeTest {
 
   @Test
   public void initShouldFailWithoutPassword() {
+    setDefaultConfig();
+    settings.removeProperty(BitBucketPlugin.BITBUCKET_PASSWORD);
+
     try {
-      when(configuration.password()).thenReturn(null);
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
       pullRequestFacade.init(123, temporaryFolder.getRoot());
 
@@ -217,8 +225,10 @@ public class PullRequestFacadeTest {
 
   @Test
   public void initShouldFailWithoutRepository() {
+    setDefaultConfig();
+    settings.removeProperty(BitBucketPlugin.BITBUCKET_REPO);
+
     try {
-      when(configuration.repository()).thenReturn(null);
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
       pullRequestFacade.init(123, temporaryFolder.getRoot());
 
@@ -231,6 +241,8 @@ public class PullRequestFacadeTest {
 
   @Test
   public void initShouldFailWithoutPullRequestNumber() {
+    setDefaultConfig();
+
     try {
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
       pullRequestFacade.init(0, temporaryFolder.getRoot());
@@ -244,6 +256,8 @@ public class PullRequestFacadeTest {
 
   @Test
   public void shouldBeAbleToLoadPullRequestPatch() throws Exception {
+    setDefaultConfig();
+
     InputStream diffStream = getClass().getClassLoader().getResourceAsStream("unified_diff.txt");
     StringWriter writer = new StringWriter();
     IOUtils.copy(diffStream, writer);
@@ -292,4 +306,9 @@ public class PullRequestFacadeTest {
     assertThat(patch.getFiles().size() == 7).isTrue();
   }
 
+  private void setDefaultConfig() {
+    settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PASSWORD, "password");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "test/repo");
+  }
 }

@@ -83,26 +83,26 @@ public class PullRequestFacade implements BatchComponent {
 
   public void init(int pullRequestNumber, File projectBaseDir) {
     if (findGitBaseDir(projectBaseDir) == null) {
-      throw new IllegalStateException("Unable to find Git root directory. Is " + projectBaseDir + " part of a Git repository?");
+      throw new IllegalStateException(config.message("error.root_not_git", projectBaseDir.getPath()));
     }
 
     String login = config.login();
     if (login == null || login.isEmpty()) {
-      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null");
+      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_LOGIN));
     }
 
     String password = config.password();
     if (password == null || password.isEmpty()) {
-      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_PASSWORD + " cannot be null");
+      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_PASSWORD));
     }
 
 
     if (config.repository() == null || config.repository().isEmpty()) {
-      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_REPO + " cannot be null");
+      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_REPO));
     }
 
     if (pullRequestNumber == 0) {
-      throw new IllegalStateException(BitBucketPlugin.BITBUCKET_PULL_REQUEST + " cannot be null");
+      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_PULL_REQUEST));
     }
 
     try {
