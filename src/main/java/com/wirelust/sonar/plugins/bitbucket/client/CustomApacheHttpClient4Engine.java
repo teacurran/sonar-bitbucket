@@ -36,6 +36,10 @@ import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
  * Date: 08-Dec-2015
  *
  * @author T. Curran
+ *
+ * This class is overridden because the super version has setRedirecting(false) with no way to configure it.
+ * Using this overrided class we can set the redirect strategy in the client without any issue.
+ *
  */
 public class CustomApacheHttpClient4Engine extends ApacheHttpClient4Engine {
 
@@ -44,7 +48,6 @@ public class CustomApacheHttpClient4Engine extends ApacheHttpClient4Engine {
     this.createdHttpClient = true;
   }
 
-
   @Override
   protected void loadHttpMethod(final ClientInvocation request, HttpRequestBase httpMethod) throws Exception {
     if (request.getEntity() == null) {
@@ -52,7 +55,6 @@ public class CustomApacheHttpClient4Engine extends ApacheHttpClient4Engine {
       commitHeaders(request, httpMethod);
       return;
     }
-
 
     if (httpMethod instanceof HttpGet) {
       throw new ProcessingException(Messages.MESSAGES.getRequestCannotHaveBody());

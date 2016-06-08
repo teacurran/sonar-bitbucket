@@ -20,7 +20,6 @@
 package com.wirelust.sonar.plugins.bitbucket.client;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;

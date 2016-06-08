@@ -39,6 +39,9 @@ import org.junit.Test;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * Date: 06-Jun-2016
  *
@@ -54,6 +57,11 @@ public class ApiClientFactoryTest {
   @Before
   public void prepare() {
     settings = new Settings(new PropertyDefinitions(BitBucketPlugin.class));
+
+    settings.setProperty(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT, "http://127.0.0.1");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_ID, "client_id");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_SECRET, "client_secret");
+
     configuration = new BitBucketPluginConfiguration(settings);
     apiClientFactory = new ApiClientFactory(configuration);
 
@@ -78,9 +86,6 @@ public class ApiClientFactoryTest {
 
   @Test
   public void shouldBeAbleToGetAuthClient() throws Exception {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT, "http://127.0.0.1");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_ID, "client_id");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_SECRET, "client_secret");
 
     apiClientFactory.setClientHttpEngine(new ClientHttpEngine() {
                                            @Override
@@ -97,7 +102,7 @@ public class ApiClientFactoryTest {
                                            public ClientResponse invoke(ClientInvocation request) {
                                              ClientRequestHeaders clientRequestHeaders = request.getHeaders();
                                              String authHeader = clientRequestHeaders.getHeader("Authorization");
-                                             Assert.assertEquals("BASIC Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=", authHeader);
+                                             assertEquals("BASIC Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=", authHeader);
 
                                              return mockClientResponse;
                                            }
@@ -112,15 +117,11 @@ public class ApiClientFactoryTest {
     BitbucketAuthClient authClient = apiClientFactory.getAuthClient();
 
     Response response = authClient.getTokenByUsernamePassword("password", "user", "password");
-    Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
 
   @Test
   public void shouldBeAbleToGetV2Client() throws Exception {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_TOKEN_ENDPOINT, "http://127.0.0.1");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_ID, "client_id");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_CLIENT_SECRET, "client_secret");
-
     apiClientFactory.setClientHttpEngine(new ClientHttpEngine() {
                                            @Override
                                            public SSLContext getSslContext() {
@@ -136,7 +137,7 @@ public class ApiClientFactoryTest {
                                            public ClientResponse invoke(ClientInvocation request) {
                                              ClientRequestHeaders clientRequestHeaders = request.getHeaders();
                                              String authHeader = clientRequestHeaders.getHeader("Authorization");
-                                             Assert.assertEquals("Bearer token-xxx123", authHeader);
+                                             assertEquals("Bearer token-xxx123", authHeader);
                                              return mockClientResponse;
                                            }
 
@@ -150,6 +151,41 @@ public class ApiClientFactoryTest {
     BitbucketV2Client v2Client = apiClientFactory.getV2Client("token-xxx123");
 
     Response response = v2Client.getAllRepositories();
-    Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
   }
+
+  @Test
+  public void shouldBeAbleToGetV2ClientWithoutAuthToken() throws Exception {
+    apiClientFactory.setClientHttpEngine(new ClientHttpEngine() {
+                                           @Override
+                                           public SSLContext getSslContext() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public HostnameVerifier getHostnameVerifier() {
+                                             return null;
+                                           }
+
+                                           @Override
+                                           public ClientResponse invoke(ClientInvocation request) {
+                                             ClientRequestHeaders clientRequestHeaders = request.getHeaders();
+                                             String authHeader = clientRequestHeaders.getHeader("Authorization");
+                                             assertNull(authHeader);
+                                             return mockClientResponse;
+                                           }
+
+                                           @Override
+                                           public void close() {
+
+                                           }
+                                         });
+
+
+    BitbucketV2Client v2Client = apiClientFactory.getV2Client(null);
+
+    Response response = v2Client.getAllRepositories();
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
 }

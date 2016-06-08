@@ -19,14 +19,8 @@
  */
 package com.wirelust.sonar.plugins.bitbucket.client;
 
-import java.io.IOException;
 import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 
 import org.apache.http.client.config.RequestConfig;
@@ -34,7 +28,6 @@ import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -42,7 +35,6 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.PassthroughTrustManager;
-import org.jboss.resteasy.client.jaxrs.i18n.Messages;
 
 /**
  * Date: 07-Dec-2015
@@ -57,24 +49,8 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
   protected ClientHttpEngine initDefaultEngine() {
     RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 
-    X509HostnameVerifier verifier = null;
-    if (this.verifier != null) {
-      verifier = new VerifierWrapper(this.verifier);
-    } else {
-      switch (policy) {
-        case ANY:
-          verifier = new AllowAllHostnameVerifier();
-          break;
-        case WILDCARD:
-          verifier = new BrowserCompatHostnameVerifier();
-          break;
-        case STRICT:
-          verifier = new StrictHostnameVerifier();
-          break;
-        default:
-          break;
-      }
-    }
+    X509HostnameVerifier verifier = new BrowserCompatHostnameVerifier();;
+
     try {
       SSLConnectionSocketFactory sslsf = SSLConnectionSocketFactory.getSocketFactory();
 
@@ -128,35 +104,4 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
       throw new RuntimeException(e);
     }
   }
-
-  static class VerifierWrapper implements X509HostnameVerifier {
-    protected HostnameVerifier verifier;
-
-    VerifierWrapper(HostnameVerifier verifier) {
-      this.verifier = verifier;
-    }
-
-    @Override
-    public void verify(String host, SSLSocket ssl) throws IOException {
-      if (!verifier.verify(host, ssl.getSession())) {
-        throw new SSLException(Messages.MESSAGES.hostnameVerificationFailure());
-      }
-    }
-
-    @Override
-    public void verify(String host, X509Certificate cert) throws SSLException {
-      throw new SSLException(Messages.MESSAGES.verificationPathNotImplemented());
-    }
-
-    @Override
-    public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
-      throw new SSLException(Messages.MESSAGES.verificationPathNotImplemented());
-    }
-
-    @Override
-    public boolean verify(String s, SSLSession sslSession) {
-      return verifier.verify(s, sslSession);
-    }
-  }
-
 }
