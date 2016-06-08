@@ -23,6 +23,7 @@ import java.security.SecureRandom;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
+import com.wirelust.sonar.plugins.bitbucket.client.exception.ClientException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
@@ -101,7 +102,7 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
       //engine.setDefaultProxy(defaultProxy);
       return engine;
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new ClientException(e);
     }
   }
 }

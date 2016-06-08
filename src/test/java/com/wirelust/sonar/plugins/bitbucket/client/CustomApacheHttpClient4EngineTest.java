@@ -21,16 +21,13 @@ package com.wirelust.sonar.plugins.bitbucket.client;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URI;
-
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.MediaType;
 
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -45,8 +42,6 @@ import org.jboss.resteasy.util.DelegatingOutputStream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

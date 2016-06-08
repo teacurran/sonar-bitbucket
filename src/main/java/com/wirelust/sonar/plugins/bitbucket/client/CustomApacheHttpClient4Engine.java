@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.ws.rs.ProcessingException;
 
+import com.wirelust.sonar.plugins.bitbucket.client.exception.ClientException;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -68,7 +69,7 @@ public class CustomApacheHttpClient4Engine extends ApacheHttpClient4Engine {
       commitHeaders(request, httpMethod);
       post.setEntity(entity);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new ClientException(e);
     }
   }
 
