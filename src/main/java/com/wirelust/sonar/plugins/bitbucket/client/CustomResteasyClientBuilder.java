@@ -29,7 +29,6 @@ import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
-import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -51,13 +50,14 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
 
   public static final TrustSelfSignedStrategy TRUST_STRATEGY_INSTANCE = new TrustSelfSignedStrategy();
 
+  @Override
   protected ClientHttpEngine initDefaultEngine() {
     RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 
     X509HostnameVerifier verifier = new BrowserCompatHostnameVerifier();;
 
     try {
-      SSLConnectionSocketFactory sslsf = SSLConnectionSocketFactory.getSocketFactory();
+      SSLConnectionSocketFactory sslsf;
 
       SSLContext theContext = sslContext;
       if (disableTrustManager) {
@@ -77,7 +77,6 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
           .build();
         sslsf = new SSLConnectionSocketFactory(ctx, verifier);
       } else {
-        //sslsf = new SSLSocketFactory(SSLContext.getInstance(SSLSocketFactory.TLS), verifier);
         final SSLContext tlsContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
         tlsContext.init(null, null, null);
         sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
@@ -105,8 +104,7 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
       engine.setResponseBufferSize(responseBufferSize);
       engine.setHostnameVerifier(verifier);
       // this may be null.  We can't really support this with Apache Client.
-      //engine.setSslContext(theContext);
-      //engine.setDefaultProxy(defaultProxy);
+      engine.setSslContext(theContext);
       return engine;
     } catch (Exception e) {
       throw new ClientException(e);

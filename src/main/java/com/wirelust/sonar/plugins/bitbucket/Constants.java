@@ -27,4 +27,9 @@ package com.wirelust.sonar.plugins.bitbucket;
 public class Constants {
 
   public static final String KEY_ERROR_NULL = "error.null";
+
+  private Constants() {
+    // file cannot be instantiated
+  }
+
 }

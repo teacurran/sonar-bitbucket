@@ -59,11 +59,11 @@ public class RestEasyClientBuilderTest {
     Assert.assertTrue(resteasyProviderFactory.getProviderClasses().contains(DataSourceProvider.class));
   }
 
-  @Test
   /**
    * This method simply instantiates a private constructor to ensure code coverage for it so the
    * coverage reports aren't diminished
    */
+  @Test
   public void testResteasyRegisterConstructorIsPrivate() throws Exception {
     Constructor<ResteasyRegisterBuiltin> constructor = ResteasyRegisterBuiltin.class.getDeclaredConstructor();
     Assert.assertTrue(Modifier.isPrivate(constructor.getModifiers()));
