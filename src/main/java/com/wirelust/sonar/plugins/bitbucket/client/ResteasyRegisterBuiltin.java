@@ -50,16 +50,7 @@ public class ResteasyRegisterBuiltin {
     while (resources.hasMoreElements()) {
       URL url = resources.nextElement();
 
-      try (InputStream is = url.openStream()) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-        for (String line; (line = reader.readLine()) != null; ) {
-          String trimmedLine = line.trim();
-          if (trimmedLine.length() > 0) {
-            classes.add(trimmedLine);
-          }
-        }
-      }
+      addUrl(classes, url);
     }
 
     for (String thisClass : classes) {
@@ -75,4 +66,16 @@ public class ResteasyRegisterBuiltin {
     }
   }
 
+  private static void addUrl(List<String> classes, URL url) throws IOException {
+      try (InputStream is = url.openStream()) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        for (String line; (line = reader.readLine()) != null; ) {
+          String trimmedLine = line.trim();
+          if (trimmedLine.length() > 0) {
+            classes.add(trimmedLine);
+          }
+        }
+      }
+  }
 }

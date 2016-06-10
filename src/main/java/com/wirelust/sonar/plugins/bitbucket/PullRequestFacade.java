@@ -93,7 +93,7 @@ public class PullRequestFacade implements BatchComponent {
 
     String password = config.password();
     if (password == null || password.isEmpty()) {
-      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_PASSWORD));
+      throw new IllegalStateException(config.message(Constants.KEY_ERROR_NULL, BitBucketPlugin.BITBUCKET_PASS_KEY));
     }
 
 

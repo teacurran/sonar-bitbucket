@@ -104,7 +104,7 @@ public class BitBucketPluginConfiguration implements BatchComponent {
 
   @CheckForNull
   public String password() {
-    return settings.getString(BitBucketPlugin.BITBUCKET_PASSWORD);
+    return settings.getString(BitBucketPlugin.BITBUCKET_PASS_KEY);
   }
 
   @CheckForNull

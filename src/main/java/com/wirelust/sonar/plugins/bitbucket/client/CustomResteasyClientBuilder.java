@@ -82,7 +82,6 @@ public class CustomResteasyClientBuilder extends ResteasyClientBuilder {
         sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
       }
 
-
       if (socketTimeout > -1) {
         requestConfigBuilder.setSocketTimeout((int) socketTimeoutUnits.toMillis(socketTimeout));
       }

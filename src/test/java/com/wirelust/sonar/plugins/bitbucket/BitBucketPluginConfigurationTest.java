@@ -78,7 +78,7 @@ public class BitBucketPluginConfigurationTest {
     settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
     assertThat(config.login()).isEqualTo("login");
 
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PASSWORD, "password");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PASS_KEY, "password");
     assertThat(config.password()).isEqualTo("password");
 
     assertThat(config.isEnabled()).isFalse();

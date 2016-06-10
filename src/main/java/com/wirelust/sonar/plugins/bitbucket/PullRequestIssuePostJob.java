@@ -101,34 +101,34 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
     for (Issue issue : projectIssues.issues()) {
       String severity = issue.severity();
       boolean isNew = issue.isNew();
-      if (!isNew) {
-        continue;
-      }
-
-      LOGGER.debug("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
 
       Integer issueLine = issue.line();
       InputFile inputFile = inputFileCache.byKey(issue.componentKey());
-      if (inputFile != null && !pullRequestFacade.hasFile(inputFile)) {
-        // SONARGITUB-13 Ignore issues on files no modified by the P/R
+
+      LOGGER.debug("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
+
+      // Skip if the issue isn't new, or isn't in the pull request
+      if (!isNew
+        || (inputFile != null && !pullRequestFacade.hasFile(inputFile))) {
         continue;
       }
 
       boolean reportedInline = false;
-      if (inputFile != null && issueLine != null) {
-        if (pullRequestFacade.hasFileLine(inputFile, issueLine)) {
-          String message = issue.message();
-          String ruleKey = issue.ruleKey().toString();
-          if (!commentToBeAddedByFileAndByLine.containsKey(inputFile)) {
-            commentToBeAddedByFileAndByLine.put(inputFile, new HashMap<Integer, StringBuilder>());
-          }
-          Map<Integer, StringBuilder> commentsByLine = commentToBeAddedByFileAndByLine.get(inputFile);
-          if (!commentsByLine.containsKey(issueLine)) {
-            commentsByLine.put(issueLine, new StringBuilder());
-          }
-          commentsByLine.get(issueLine).append(markDownUtils.inlineIssue(severity, message, ruleKey)).append("\n");
-          reportedInline = true;
+      if (inputFile != null
+        && issueLine != null
+        && pullRequestFacade.hasFileLine(inputFile, issueLine)) {
+
+        String message = issue.message();
+        String ruleKey = issue.ruleKey().toString();
+        if (!commentToBeAddedByFileAndByLine.containsKey(inputFile)) {
+          commentToBeAddedByFileAndByLine.put(inputFile, new HashMap<Integer, StringBuilder>());
         }
+        Map<Integer, StringBuilder> commentsByLine = commentToBeAddedByFileAndByLine.get(inputFile);
+        if (!commentsByLine.containsKey(issueLine)) {
+          commentsByLine.put(issueLine, new StringBuilder());
+        }
+        commentsByLine.get(issueLine).append(markDownUtils.inlineIssue(severity, message, ruleKey)).append("\n");
+        reportedInline = true;
       }
 
       report.process(issue, pullRequestFacade.getWebUrl(inputFile, issueLine), reportedInline);

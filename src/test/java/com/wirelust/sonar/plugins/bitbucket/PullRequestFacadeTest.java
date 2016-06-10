@@ -49,7 +49,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
 import org.sonar.api.config.Settings;
@@ -210,7 +209,7 @@ public class PullRequestFacadeTest {
   @Test
   public void initShouldFailWithoutPassword() {
     setDefaultConfig();
-    settings.removeProperty(BitBucketPlugin.BITBUCKET_PASSWORD);
+    settings.removeProperty(BitBucketPlugin.BITBUCKET_PASS_KEY);
 
     try {
       PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
@@ -219,7 +218,7 @@ public class PullRequestFacadeTest {
       Assert.fail();
     } catch (Exception e) {
       Assert.assertTrue(e instanceof IllegalStateException);
-      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_PASSWORD + " cannot be null"));
+      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_PASS_KEY + " cannot be null"));
     }
   }
 
@@ -308,7 +307,7 @@ public class PullRequestFacadeTest {
 
   private void setDefaultConfig() {
     settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PASSWORD, "password");
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PASS_KEY, "password");
     settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "test/repo");
   }
 }

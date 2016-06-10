@@ -65,7 +65,7 @@ import org.sonar.api.rule.Severity;
     description = "BitBucket account used to perform operations like adding comments on pull requests.",
     global = true),
   @Property(
-    key = BitBucketPlugin.BITBUCKET_PASSWORD,
+    key = BitBucketPlugin.BITBUCKET_PASS_KEY,
     name = "BitBucket Password",
     description = "BitBucket Password",
     type = PropertyType.PASSWORD,
@@ -136,7 +136,7 @@ public class BitBucketPlugin extends SonarPlugin {
   public static final String BITBUCKET_ENDPOINT = "sonar.bitbucket.endpoint";
   public static final String BITBUCKET_TOKEN_ENDPOINT = "sonar.bitbucket.token.endpoint";
   public static final String BITBUCKET_LOGIN = "sonar.bitbucket.login";
-  public static final String BITBUCKET_PASSWORD = "sonar.bitbucket.password";
+  public static final String BITBUCKET_PASS_KEY = "sonar.bitbucket.password";
   public static final String BITBUCKET_REPO = "sonar.bitbucket.repository";
   public static final String BITBUCKET_PULL_REQUEST = "sonar.bitbucket.pullRequest";
   public static final String BITBUCKET_ISSUE_THRESHOLD = "sonar.bitbucket.threshold";
