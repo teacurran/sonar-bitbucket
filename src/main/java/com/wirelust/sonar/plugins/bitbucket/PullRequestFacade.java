@@ -41,8 +41,8 @@ import com.wirelust.bitbucket.client.representations.Commit;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
-import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
+import com.wirelust.sonar.plugins.bitbucket.client.dao.V2DAO;
 import org.eclipse.jgit.diff.Edit;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
@@ -74,6 +74,7 @@ public class PullRequestFacade implements BatchComponent {
   private File gitBaseDir;
   private String authenticatedUser;
   private BitbucketV2Client bitbucketClient;
+  private V2DAO v2DAO;
   private ApiClientFactory apiClientFactory;
 
   public PullRequestFacade(BitBucketPluginConfiguration config, ApiClientFactory apiClientFactory) {
@@ -120,6 +121,7 @@ public class PullRequestFacade implements BatchComponent {
       LOGGER.debug("bitbucket Access token:{}", accessToken.getAccessToken());
 
       bitbucketClient = apiClientFactory.getV2Client(accessToken.getAccessToken());
+      v2DAO = new V2DAO(bitbucketClient, config);
 
       Response userResponse = bitbucketClient.getUser();
       User user = userResponse.readEntity(User.class);
@@ -187,16 +189,18 @@ public class PullRequestFacade implements BatchComponent {
       List<Integer> patchLocationMapping = new ArrayList<>();
       modifiedLinesByFile.put(fileHeader.getNewPath(), patchLocationMapping);
 
-      if (fileHeader.getHunks() == null) {
-        continue;
+      if (fileHeader.getHunks() != null) {
+        loadHeaderHunks(patchLocationMapping, fileHeader);
       }
+    }
+  }
 
-      for (HunkHeader hunk : fileHeader.getHunks()) {
-        for (Edit edit : hunk.toEditList()) {
-          if (!edit.getType().equals(Edit.Type.DELETE)) {
-            for (int line=edit.getBeginB(); line<edit.getEndB(); line++) {
-              patchLocationMapping.add(line+1);
-            }
+  private void loadHeaderHunks(List<Integer> patchLocationMapping, FileHeader fileHeader) {
+    for (HunkHeader hunk : fileHeader.getHunks()) {
+      for (Edit edit : hunk.toEditList()) {
+        if (!edit.getType().equals(Edit.Type.DELETE)) {
+          for (int line=edit.getBeginB(); line<edit.getEndB(); line++) {
+            patchLocationMapping.add(line+1);
           }
         }
       }
@@ -278,46 +282,24 @@ public class PullRequestFacade implements BatchComponent {
         && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(line)) {
         Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(line);
 
-        if (existingReview.getContent() != null && existingReview.getContent().getRaw() != null) {
-          if (!existingReview.getContent().getRaw().equals(body)) {
+        if (existingReview.getContent() != null
+          && existingReview.getContent().getRaw() != null
+          && !existingReview.getContent().getRaw().equals(body)) {
             existingReview.getContent().setMarkup(body);
 
-            V1Comment comment = new V1Comment();
-            comment.setCommentId(existingReview.getId());
-            comment.setContent(body);
-            comment.setFilename(fullpath);
-            comment.setLineTo(line);
-            Response response = bitbucketClient.postPullRequestComment(
-              config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
-
-            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-              String responseBody = response.readEntity(String.class);
-              throw new IllegalStateException(
-                String.format("Unable to update review comment file:%s, expected:%d, got:%d, body:%s",
-                  fullpath, 200, response.getStatus(), responseBody));
-            }
-
-            response.close();
-
-          }
+            v2DAO.createOrUpdatePullRequestComment(pullRequest,
+              existingReview.getId(),
+              body,
+              fullpath,
+              line);
         }
         commentsToBeDeleted.remove(existingReview.getId());
       } else {
-        V1Comment comment = new V1Comment();
-        comment.setContent(body);
-        comment.setFilename(fullpath);
-        comment.setLineTo(line);
-        Response response = bitbucketClient.postPullRequestComment(
-          config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
-
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-          String responseBody = response.readEntity(String.class);
-          throw new IllegalStateException(
-            String.format("Unable to create review comment file:%s, expected:%d, got:%d, body:%s",
-              fullpath, 200, response.getStatus(), responseBody));
-        }
-        response.close();
-
+          v2DAO.createOrUpdatePullRequestComment(pullRequest,
+            null,
+            body,
+            fullpath,
+            line);
       }
     } catch (Exception e) {
       throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
