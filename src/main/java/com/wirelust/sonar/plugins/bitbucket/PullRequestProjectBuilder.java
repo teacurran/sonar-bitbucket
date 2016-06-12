@@ -20,8 +20,8 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import org.sonar.api.CoreProperties;
+import org.sonar.api.batch.AnalysisMode;
 import org.sonar.api.batch.bootstrap.ProjectBuilder;
-import org.sonar.api.config.Settings;
 import org.sonar.api.utils.MessageException;
 
 /**
@@ -31,36 +31,32 @@ import org.sonar.api.utils.MessageException;
  */
 public class PullRequestProjectBuilder extends ProjectBuilder {
 
-  private final BitBucketPluginConfiguration bitBucketPluginConfiguration;
+  private final BitBucketPluginConfiguration config;
   private final PullRequestFacade pullRequestFacade;
-  private final Settings settings;
+  private final AnalysisMode mode;
 
-  public PullRequestProjectBuilder(BitBucketPluginConfiguration bitBucketPluginConfiguration, PullRequestFacade pullRequestFacade, Settings settings) {
-    this.bitBucketPluginConfiguration = bitBucketPluginConfiguration;
+  public PullRequestProjectBuilder(BitBucketPluginConfiguration bitBucketPluginConfiguration, PullRequestFacade pullRequestFacade, AnalysisMode mode) {
+    this.config = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
-    this.settings = settings;
+    this.mode = mode;
   }
 
   @Override
   public void build(Context context) {
-    if (!bitBucketPluginConfiguration.isEnabled()) {
+    if (!config.isEnabled()) {
       return;
     }
     checkMode();
-    int pullRequestNumber = bitBucketPluginConfiguration.pullRequestNumber();
+    int pullRequestNumber = config.pullRequestNumber();
     pullRequestFacade.init(pullRequestNumber, context.projectReactor().getRoot().getBaseDir());
 
     pullRequestFacade.unapprovePullRequest();
   }
 
   private void checkMode() {
-    String analysisMode = settings.getString(CoreProperties.ANALYSIS_MODE);
-    boolean isIssues = CoreProperties.ANALYSIS_MODE_PREVIEW.equals(analysisMode)
-      || CoreProperties.ANALYSIS_MODE_ISSUES.equals(analysisMode);
-    if (!isIssues) {
-      throw MessageException.of("The Bitbucket plugin is only intended to be used in preview or issues mode. Please set '" + CoreProperties.ANALYSIS_MODE + "'.");
+    if (!mode.isIssues()) {
+      throw MessageException.of(config.message("error.issue_mode_only", CoreProperties.ANALYSIS_MODE));
     }
-
   }
 
 }

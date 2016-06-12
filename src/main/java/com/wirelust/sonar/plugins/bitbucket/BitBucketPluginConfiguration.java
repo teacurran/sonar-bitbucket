@@ -19,18 +19,20 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 
-import org.sonar.api.BatchComponent;
 import org.sonar.api.CoreProperties;
+import org.sonar.api.batch.BatchSide;
 import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.config.Settings;
 
+@BatchSide
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class BitBucketPluginConfiguration implements BatchComponent {
+public class BitBucketPluginConfiguration {
 
   public static final int MAX_GLOBAL_ISSUES  = 10;
 
@@ -38,6 +40,7 @@ public class BitBucketPluginConfiguration implements BatchComponent {
   private Pattern gitSshPattern;
   private Pattern gitHttpPattern;
   private ResourceBundle localization;
+  private Locale locale = Locale.ENGLISH;
 
   public BitBucketPluginConfiguration(Settings settings) {
     this.settings = settings;
@@ -180,4 +183,7 @@ public class BitBucketPluginConfiguration implements BatchComponent {
     return null;
   }
 
+  public Locale getLocale() {
+    return locale;
+  }
 }

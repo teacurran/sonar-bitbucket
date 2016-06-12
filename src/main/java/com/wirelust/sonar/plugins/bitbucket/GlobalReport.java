@@ -20,12 +20,12 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import javax.annotation.Nullable;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.rule.Severity;
+import org.sonar.api.batch.postjob.issue.PostJobIssue;
+import org.sonar.api.batch.rule.Severity;
 
 public class GlobalReport {
   private final MarkDownUtils markDownUtils;
-  private int[] newIssuesBySeverity = new int[Severity.ALL.size()];
+  private int[] newIssuesBySeverity = new int[Severity.values().length];
   private StringBuilder notReportedOnDiff = new StringBuilder();
   private int notReportedIssueCount = 0;
   private int notReportedDisplayedIssueCount = 0;
@@ -36,8 +36,8 @@ public class GlobalReport {
     this.config = config;
   }
 
-  private void increment(String severity) {
-    this.newIssuesBySeverity[Severity.ALL.indexOf(severity)]++;
+  private void increment(Severity severity) {
+    this.newIssuesBySeverity[severity.ordinal()]++;
   }
 
   public String formatForMarkdown() {
@@ -47,7 +47,8 @@ public class GlobalReport {
       sb.append("\nWatch the comments in this conversation to review them.\n");
     }
     if (notReportedOnDiff.length() > 0) {
-      sb.append("\nNote: the following issues could not be reported as comments because they are located on lines that are not displayed in this pull request:\n\n")
+      sb.append("\nNote: The following issues were found on lines that were not modified in the pull request. "
+             + "Because these issues can't be reported as line comments, they are summarized here:\n\n")
         .append(notReportedOnDiff.toString());
 
       if (notReportedIssueCount >= BitBucketPluginConfiguration.MAX_GLOBAL_ISSUES) {
@@ -59,8 +60,8 @@ public class GlobalReport {
     return sb.toString();
   }
 
-  private int newIssues(String s) {
-    return newIssuesBySeverity[Severity.ALL.indexOf(s)];
+  private int newIssues(Severity s) {
+    return newIssuesBySeverity[s.ordinal()];
   }
 
   private void printNewIssuesMarkdown(StringBuilder sb) {
@@ -78,14 +79,19 @@ public class GlobalReport {
     }
   }
 
-  private void printNewIssuesForMarkdown(StringBuilder sb, String severity) {
+  private void printNewIssuesForMarkdown(StringBuilder sb, Severity severity) {
     int issueCount = newIssues(severity);
     if (issueCount > 0) {
-      sb.append("* ").append(MarkDownUtils.getImageMarkdownForSeverity(severity)).append(" ").append(issueCount).append(" ").append(severity.toLowerCase()).append("\n");
+      sb.append("* ")
+        .append(MarkDownUtils.getImageMarkdownForSeverity(severity))
+        .append(" ")
+        .append(issueCount)
+        .append(" ").append(severity.name().toLowerCase(config.getLocale()))
+        .append("\n");
     }
   }
 
-  public void process(Issue issue, @Nullable String webUrl, boolean reportedOnDiff) {
+  public void process(PostJobIssue issue, @Nullable String webUrl, boolean reportedOnDiff) {
     if (reportedOnDiff) {
       increment(issue.severity());
     } else if (config.reportNotInDiff()) {
@@ -110,8 +116,8 @@ public class GlobalReport {
 
     boolean approved = true;
     boolean belowThreshold = true;
-    for (String severity : Severity.ALL) {
-      if (severity.equalsIgnoreCase(threshold)) {
+    for (Severity severity : Severity.values()) {
+      if (severity.name().equalsIgnoreCase(threshold)) {
         belowThreshold = false;
       }
       if (!belowThreshold && newIssues(severity) > 0) {

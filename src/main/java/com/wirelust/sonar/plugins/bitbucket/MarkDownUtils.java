@@ -21,14 +21,18 @@ package com.wirelust.sonar.plugins.bitbucket;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Locale;
 import javax.annotation.Nullable;
-import org.sonar.api.BatchComponent;
+
 import org.sonar.api.CoreProperties;
+import org.sonar.api.batch.BatchSide;
 import org.sonar.api.batch.InstantiationStrategy;
+import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.config.Settings;
 
+@BatchSide
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class MarkDownUtils implements BatchComponent {
+public class MarkDownUtils {
 
   private static final String IMAGES_ROOT_URL = "https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/";
   private final String ruleUrlPrefix;
@@ -36,13 +40,13 @@ public class MarkDownUtils implements BatchComponent {
   public MarkDownUtils(Settings settings) {
     // If server base URL was not configured in SQ server then is is better to take URL configured on batch side
     String baseUrl = settings.hasKey(CoreProperties.SERVER_BASE_URL) ? settings.getString(CoreProperties.SERVER_BASE_URL) : settings.getString("sonar.host.url");
-    if (!baseUrl.endsWith("/")) {
+    if (baseUrl != null && !baseUrl.endsWith("/")) {
       baseUrl += "/";
     }
     this.ruleUrlPrefix = baseUrl;
   }
 
-  public String inlineIssue(String severity, String message, String ruleKey) {
+  public String inlineIssue(Severity severity, String message, String ruleKey) {
     String ruleLink = getRuleLink(ruleKey);
     StringBuilder sb = new StringBuilder();
     sb.append(getImageMarkdownForSeverity(severity))
@@ -53,7 +57,7 @@ public class MarkDownUtils implements BatchComponent {
     return sb.toString();
   }
 
-  public String globalIssue(String severity, String message, String ruleKey, @Nullable String url, String componentKey) {
+  public String globalIssue(Severity severity, String message, String ruleKey, @Nullable String url, String componentKey) {
     String ruleLink = getRuleLink(ruleKey);
     StringBuilder sb = new StringBuilder();
     sb.append(getImageMarkdownForSeverity(severity)).append(" ");
@@ -79,8 +83,8 @@ public class MarkDownUtils implements BatchComponent {
     }
   }
 
-  public static String getImageMarkdownForSeverity(String severity) {
-    return "![" + severity + "](" + IMAGES_ROOT_URL + "severity-" + severity.toLowerCase() + ".png)";
+  public static String getImageMarkdownForSeverity(Severity severity) {
+    return "![" + severity.name() + "](" + IMAGES_ROOT_URL + "severity-" + severity.name().toLowerCase(Locale.ENGLISH) + ".png)";
   }
 
 }

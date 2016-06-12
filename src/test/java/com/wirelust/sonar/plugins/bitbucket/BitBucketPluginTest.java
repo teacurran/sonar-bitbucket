@@ -20,6 +20,8 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import org.junit.Test;
+import org.sonar.api.Plugin;
+import org.sonar.api.utils.Version;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +29,9 @@ public class BitBucketPluginTest {
 
   @Test
   public void uselessTest() {
-    assertThat(new BitBucketPlugin().getExtensions().size()).isGreaterThan(1);
+    Plugin.Context context = new Plugin.Context(Version.parse("5.6"));
+    new BitBucketPlugin().define(context);
+    assertThat(context.getExtensions().size()).isGreaterThan(1);
   }
 
 }

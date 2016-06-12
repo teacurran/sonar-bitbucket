@@ -19,15 +19,19 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sonar.api.batch.CheckProject;
-import org.sonar.api.batch.SensorContext;
+import org.sonar.api.batch.fs.InputComponent;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.issue.Issue;
+import org.sonar.api.batch.postjob.PostJob;
+import org.sonar.api.batch.postjob.PostJobContext;
+import org.sonar.api.batch.postjob.PostJobDescriptor;
+import org.sonar.api.batch.postjob.issue.PostJobIssue;
 import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.measures.Metrics;
 import org.sonar.api.resources.Project;
@@ -35,9 +39,10 @@ import org.sonar.api.resources.Project;
 /**
  * Compute comments to be added on the pull request.
  */
-public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, CheckProject {
+public class PullRequestIssuePostJob implements PostJob {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestIssuePostJob.class);
+  private static final Comparator<PostJobIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final PullRequestFacade pullRequestFacade;
   private final ProjectIssues projectIssues;
@@ -59,16 +64,16 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
   }
 
   @Override
-  public boolean shouldExecuteOnProject(Project project) {
-    return config.isEnabled();
+  public void describe(PostJobDescriptor descriptor) {
+    descriptor.name(config.message("plugin.name"))
+      .requireProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST);
   }
 
   @Override
-  public void executeOn(Project project, SensorContext context) {
-    LOGGER.info("PullRequestIssuePostJob:{}", project != null ? project.toString() : "null");
+  public void execute(PostJobContext context) {
 
     GlobalReport report = new GlobalReport(markDownUtils, config);
-    Map<InputFile, Map<Integer, StringBuilder>> commentsToBeAddedByLine = processIssues(report);
+    Map<InputFile, Map<Integer, StringBuilder>> commentsToBeAddedByLine = processIssues(report, context.issues());
 
     updateReviewComments(commentsToBeAddedByLine);
 
@@ -93,49 +98,58 @@ public class PullRequestIssuePostJob implements org.sonar.api.batch.PostJob, Che
     return "Bitbucket Pull Request Issue Publisher";
   }
 
-  private Map<InputFile, Map<Integer, StringBuilder>> processIssues(GlobalReport report) {
-
+  private Map<InputFile, Map<Integer, StringBuilder>> processIssues(GlobalReport report, Iterable<PostJobIssue> issues) {
     LOGGER.debug("processing issues");
-
     Map<InputFile, Map<Integer, StringBuilder>> commentToBeAddedByFileAndByLine = new HashMap<>();
-    for (Issue issue : projectIssues.issues()) {
-      String severity = issue.severity();
-      boolean isNew = issue.isNew();
 
-      Integer issueLine = issue.line();
-      InputFile inputFile = inputFileCache.byKey(issue.componentKey());
+    StreamSupport.stream(issues.spliterator(), false)
+      .filter(i -> i.isNew())
+      // SONARGITUB-13 Ignore issues on files not modified by the P/R
+      .filter(i -> {
+        InputComponent inputComponent = i.inputComponent();
+        return inputComponent == null ||
+          !inputComponent.isFile() ||
+          pullRequestFacade.hasFile((InputFile) inputComponent);
+      })
+      .sorted(ISSUE_COMPARATOR)
+      .forEach(i -> processIssue(report, commentToBeAddedByFileAndByLine, i));
+    return commentToBeAddedByFileAndByLine;
 
-      LOGGER.debug("processing issue:{}, severity:{}, isNew:{}", issue.line(), issue.severity(), issue.isNew());
+  }
 
-      // Skip if the issue isn't new, or isn't in the pull request
-      if (!isNew
-        || (inputFile != null && !pullRequestFacade.hasFile(inputFile))) {
-        continue;
-      }
-
-      boolean reportedInline = false;
-      if (inputFile != null
-        && issueLine != null
-        && pullRequestFacade.hasFileLine(inputFile, issueLine)) {
-
+  private boolean tryReportInline(Map<InputFile, Map<Integer, StringBuilder>> commentToBeAddedByFileAndByLine, PostJobIssue issue, InputFile inputFile) {
+    Integer lineOrNull = issue.line();
+    if (inputFile != null && lineOrNull != null) {
+      int line = lineOrNull.intValue();
+      if (pullRequestFacade.hasFileLine(inputFile, line)) {
         String message = issue.message();
         String ruleKey = issue.ruleKey().toString();
         if (!commentToBeAddedByFileAndByLine.containsKey(inputFile)) {
           commentToBeAddedByFileAndByLine.put(inputFile, new HashMap<Integer, StringBuilder>());
         }
         Map<Integer, StringBuilder> commentsByLine = commentToBeAddedByFileAndByLine.get(inputFile);
-        if (!commentsByLine.containsKey(issueLine)) {
-          commentsByLine.put(issueLine, new StringBuilder());
+        if (!commentsByLine.containsKey(line)) {
+          commentsByLine.put(line, new StringBuilder());
         }
-        commentsByLine.get(issueLine).append(markDownUtils.inlineIssue(severity, message, ruleKey)).append("\n");
-        reportedInline = true;
+        commentsByLine.get(line).append(markDownUtils.inlineIssue(issue.severity(), message, ruleKey)).append("\n");
+        return true;
       }
-
-      report.process(issue, pullRequestFacade.getWebUrl(inputFile, issueLine), reportedInline);
-
     }
-    return commentToBeAddedByFileAndByLine;
+    return false;
   }
+
+  private void processIssue(GlobalReport report,
+                            Map<InputFile,Map<Integer, StringBuilder>>commentToBeAddedByFileAndByLine,
+                            PostJobIssue issue) {
+    boolean reportedInline = false;
+    InputComponent inputComponent = issue.inputComponent();
+    if (inputComponent != null
+      && inputComponent.isFile()) {
+      reportedInline = tryReportInline(commentToBeAddedByFileAndByLine, issue, (InputFile) inputComponent);
+    }
+    report.process(issue, pullRequestFacade.getWebUrl(inputComponent, issue.line()), reportedInline);
+  }
+
 
   private void updateReviewComments(Map<InputFile, Map<Integer, StringBuilder>> commentsToBeAddedByLine) {
     for (Map.Entry<InputFile, Map<Integer, StringBuilder>> entry : commentsToBeAddedByLine.entrySet()) {

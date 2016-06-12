@@ -19,15 +19,12 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
 import org.sonar.api.CoreProperties;
+import org.sonar.api.Plugin;
 import org.sonar.api.Properties;
 import org.sonar.api.Property;
 import org.sonar.api.PropertyType;
-import org.sonar.api.SonarPlugin;
 import org.sonar.api.rule.Severity;
 
 @Properties({
@@ -129,7 +126,7 @@ import org.sonar.api.rule.Severity;
     project = true,
     module = false)
 })
-public class BitBucketPlugin extends SonarPlugin {
+public class BitBucketPlugin implements Plugin {
 
   public static final String BITBUCKET_CLIENT_ID = "sonar.bitbucket.client.id";
   public static final String BITBUCKET_CLIENT_SECRET = "sonar.bitbucket.client.secret";
@@ -149,8 +146,8 @@ public class BitBucketPlugin extends SonarPlugin {
   public static final String DEFAULT_CI_URL = "http://sonarqube.org";
 
   @Override
-  public List getExtensions() {
-    return Arrays.asList(
+  public void define(Context context) {
+    context.addExtensions(
       ApiClientFactory.class,
       PullRequestIssuePostJob.class,
       BitBucketPluginConfiguration.class,

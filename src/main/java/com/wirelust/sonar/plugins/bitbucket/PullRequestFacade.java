@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchComponent;
 import org.sonar.api.batch.InstantiationStrategy;
+import org.sonar.api.batch.fs.InputComponent;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.InputPath;
 import org.sonar.api.scan.filesystem.PathResolver;
@@ -407,14 +408,14 @@ public class PullRequestFacade implements BatchComponent {
   }
 
   @CheckForNull
-  public String getWebUrl(@Nullable InputPath inputPath, @Nullable Integer issueLine) {
-    if (inputPath != null) {
+  public String getWebUrl(@Nullable InputComponent inputComponent, @Nullable Integer issueLine) {
+    if (inputComponent instanceof InputPath) {
 
       String url = pullRequest.getLinks().get("self").get(0).getHref() +
         "/" +
         pullRequest.getSource().getBranch().getName() +
         "/diff/#chg-" +
-        getPath(inputPath);
+        getPath((InputPath) inputComponent);
 
       if (issueLine != null) {
         url = url + "T" + issueLine.toString();
