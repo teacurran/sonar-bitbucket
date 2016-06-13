@@ -1,0 +1,110 @@
+/*
+ * SonarQube :: Bitbucket Plugin
+ * Copyright (C) 2015-2016 SonarSource SA
+ * mailto:contact AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+package com.wirelust.sonar.plugins.bitbucket.dao;
+
+import javax.ws.rs.core.Response;
+
+import com.wirelust.bitbucket.client.BitbucketV2Client;
+import com.wirelust.bitbucket.client.representations.PullRequest;
+import com.wirelust.bitbucket.client.representations.User;
+import com.wirelust.bitbucket.client.representations.v1.V1Comment;
+import com.wirelust.sonar.plugins.bitbucket.BitBucketPluginConfiguration;
+import com.wirelust.sonar.plugins.bitbucket.client.dao.V2DAO;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.sonar.api.config.Settings;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Date: 13-Jun-2016
+ *
+ * @author T. Curran
+ */
+@RunWith(MockitoJUnitRunner.class)
+public class V2DAOTest {
+
+  @Mock
+  BitbucketV2Client bitbucketV2Client;
+
+  @Mock
+  Response postCommentResponseSuccess;
+
+  @Mock
+  Response postCommentResponseFailure;
+
+  Settings settings;
+  BitBucketPluginConfiguration configuration;
+  V2DAO v2DAO;
+  PullRequest pullRequest;
+
+  @Before
+  public void init() throws Exception {
+
+    settings = new Settings();
+    configuration = new BitBucketPluginConfiguration(settings);
+    v2DAO = new V2DAO(bitbucketV2Client, configuration);
+
+    pullRequest = new PullRequest();
+    pullRequest.setId(123L);
+  }
+
+  @Test
+  public void shouldBeAbleToRestPostPRCommentSuccess() {
+    when(postCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
+    when(bitbucketV2Client.postPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(postCommentResponseSuccess);
+
+    v2DAO.createOrUpdatePullRequestComment(pullRequest, 100L, "body", "filename", 100);
+    verify(postCommentResponseSuccess).close();
+
+  }
+
+  @Test
+  public void shouldBeAbleToRestPostPRCommentFailure() {
+    when(postCommentResponseFailure.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    when(postCommentResponseFailure.readEntity(String.class)).thenReturn("failure");
+    when(bitbucketV2Client.postPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(postCommentResponseFailure);
+
+    try {
+      v2DAO.createOrUpdatePullRequestComment(pullRequest, 100L, "body", "filename", 100);
+
+      Assert.fail();
+    } catch (IllegalStateException e) {
+      assertEquals("Unable to update review comment file:filename, expected:200, got:500, body:failure",
+        e.getMessage());
+    }
+  }
+
+}
