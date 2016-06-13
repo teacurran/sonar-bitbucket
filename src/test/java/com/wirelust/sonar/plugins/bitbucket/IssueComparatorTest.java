@@ -1,11 +1,14 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
-import junit.framework.Assert;
+import javax.annotation.Nullable;
+
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputComponent;
 import org.sonar.api.batch.postjob.issue.PostJobIssue;
 import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.rule.RuleKey;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Date: 13-Jun-2016
@@ -14,7 +17,106 @@ import org.sonar.api.rule.RuleKey;
  */
 public class IssueComparatorTest {
 
-  PostJobIssue nonNullJob = new PostJobIssue() {
+  private static final String COMPONENT = "foo";
+
+  PostJobIssue nonNullJob = new PostIssueJobImpl(COMPONENT, 100, Severity.INFO);
+
+  IssueComparator issueComparator = new IssueComparator();
+
+  @Test
+  public void testLeftRightEqual() {
+    assertEquals(0, issueComparator.compare(nonNullJob, nonNullJob));
+  }
+
+  @Test
+  public void testLeftNull() {
+    assertEquals(1, issueComparator.compare(null, nonNullJob));
+  }
+
+  @Test
+  public void testRightNull() {
+    assertEquals(-1, issueComparator.compare(nonNullJob, null));
+  }
+
+  @Test
+  public void testSeverityCompare() {
+    assertEquals(1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.BLOCKER)
+    ));
+
+    assertEquals(1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.MINOR),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.MAJOR)
+    ));
+
+    assertEquals(-1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.BLOCKER),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO)
+    ));
+
+    assertEquals(-1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.BLOCKER),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.CRITICAL)
+    ));
+  }
+
+  @Test
+  public void testComponentKeyCompare() {
+    assertEquals(4, issueComparator.compare(
+      new PostIssueJobImpl("foo", 100, Severity.INFO),
+      new PostIssueJobImpl("bar", 100, Severity.INFO)
+    ));
+
+    assertEquals(1, issueComparator.compare(
+      new PostIssueJobImpl("right", 100, Severity.INFO),
+      new PostIssueJobImpl("rhode", 100, Severity.INFO)
+    ));
+  }
+
+  @Test
+  public void testLineCompare() {
+    assertEquals(-1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, 125, Severity.INFO)
+    ));
+
+    assertEquals(1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 125, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO)
+    ));
+
+    assertEquals(0, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO)
+    ));
+
+    assertEquals(-1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, null, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO)
+    ));
+
+    assertEquals(1, issueComparator.compare(
+      new PostIssueJobImpl(COMPONENT, 100, Severity.INFO),
+      new PostIssueJobImpl(COMPONENT, null, Severity.INFO)
+    ));
+  }
+
+  private class PostIssueJobImpl implements PostJobIssue {
+
+    String componentKey;
+    Integer line;
+    Severity severity;
+
+    public PostIssueJobImpl(String componentKey,
+                            @Nullable
+                            Integer line,
+                            Severity severity) {
+      this.componentKey = componentKey;
+      this.line = line;
+      this.severity = severity;
+    }
+
     @Override
     public String key() {
       return null;
@@ -27,7 +129,7 @@ public class IssueComparatorTest {
 
     @Override
     public String componentKey() {
-      return null;
+      return componentKey;
     }
 
     @Override
@@ -37,7 +139,7 @@ public class IssueComparatorTest {
 
     @Override
     public Integer line() {
-      return null;
+      return line;
     }
 
     @Override
@@ -47,24 +149,12 @@ public class IssueComparatorTest {
 
     @Override
     public Severity severity() {
-      return null;
+      return severity;
     }
 
     @Override
     public boolean isNew() {
       return false;
     }
-  };
-
-  IssueComparator issueComparator = new IssueComparator();
-
-  @Test
-  public void testLeftRightEqual() {
-    Assert.assertEquals(0, issueComparator.compare(nonNullJob, nonNullJob));
-  }
-
-  @Test
-  public void testLeftNull() {
-    Assert.assertEquals(1, issueComparator.compare(null, nonNullJob));
   }
 }
