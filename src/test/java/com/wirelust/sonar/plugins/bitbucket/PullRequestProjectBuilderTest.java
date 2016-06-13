@@ -20,16 +20,16 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import java.io.File;
+
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.api.CoreProperties;
+import org.sonar.api.batch.AnalysisMode;
 import org.sonar.api.batch.bootstrap.ProjectBuilder;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
-import org.sonar.api.utils.MessageException;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -43,12 +43,14 @@ public class PullRequestProjectBuilderTest {
   private PullRequestProjectBuilder pullRequestProjectBuilder;
   private PullRequestFacade facade;
   private Settings settings;
+  private AnalysisMode mode;
 
   @Before
   public void prepare() {
     settings = new Settings(new PropertyDefinitions(BitBucketPlugin.class));
     facade = mock(PullRequestFacade.class);
-    pullRequestProjectBuilder = new PullRequestProjectBuilder(new BitBucketPluginConfiguration(settings), facade, settings);
+    mode = mock(AnalysisMode.class);
+    pullRequestProjectBuilder = new PullRequestProjectBuilder(new BitBucketPluginConfiguration(settings), facade, mode);
 
   }
 
@@ -59,40 +61,9 @@ public class PullRequestProjectBuilderTest {
   }
 
   @Test
-  public void shouldFailIfNotPreview() {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
-
-    thrown.expect(MessageException.class);
-    thrown.expectMessage("The Bitbucket plugin is only intended to be used in preview or issues mode. Please set 'sonar.analysis.mode'.");
-
-    pullRequestProjectBuilder.build(null);
-  }
-
-  @Test
-  public void shouldNotFailIfPreview() {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
-    settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_PREVIEW);
-
-    pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
-
-    verify(facade).init(eq(1), any(File.class));
-  }
-
-  @Test
-  @Ignore
-  public void shouldFailIfIncremental() {
-    settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
-    settings.setProperty(CoreProperties.ANALYSIS_MODE, CoreProperties.ANALYSIS_MODE_INCREMENTAL);
-
-    pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
-
-    verify(facade, never()).init(eq(1), any(File.class));
-  }
-
-  @Test
   public void shouldNotFailIfIssues() {
     settings.setProperty(BitBucketPlugin.BITBUCKET_PULL_REQUEST, "1");
-    settings.setProperty(CoreProperties.ANALYSIS_MODE, "issues");
+    when(mode.isIssues()).thenReturn(true);
 
     pullRequestProjectBuilder.build(mock(ProjectBuilder.Context.class, withSettings().defaultAnswer(RETURNS_DEEP_STUBS)));
 

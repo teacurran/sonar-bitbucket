@@ -20,43 +20,35 @@
 package com.wirelust.sonar.plugins.bitbucket;
 
 import java.util.Arrays;
+import java.util.Locale;
+import javax.annotation.CheckForNull;
+
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
-import org.sonar.api.batch.measure.Metric;
+import org.sonar.api.batch.postjob.PostJobContext;
+import org.sonar.api.batch.postjob.issue.PostJobIssue;
+import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.issue.ProjectIssues;
-import org.sonar.api.measures.Metrics;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.rule.Severity;
 
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class PullRequestIssuePostJobTest {
 
   private PullRequestIssuePostJob pullRequestIssuePostJob;
   private PullRequestFacade pullRequestFacade;
-  private ProjectIssues issues;
-  private InputFileCache cache;
+  private PostJobContext context;
 
   @Before
   public void prepare() throws Exception {
     pullRequestFacade = mock(PullRequestFacade.class);
     BitBucketPluginConfiguration config = mock(BitBucketPluginConfiguration.class);
-    issues = mock(ProjectIssues.class);
-    cache = mock(InputFileCache.class);
     Settings settings = new Settings(new PropertyDefinitions(PropertyDefinition.builder(CoreProperties.SERVER_BASE_URL)
       .name("Server base URL")
       .description("HTTP URL of this SonarQube server, such as <i>http://yourhost.yourdomain/sonar</i>. This value is used i.e. to create links in emails.")
@@ -64,88 +56,42 @@ public class PullRequestIssuePostJobTest {
       .defaultValue(CoreProperties.SERVER_BASE_URL_DEFAULT_VALUE)
       .build()));
 
+    context = mock(PostJobContext.class);
+
     settings.setProperty("sonar.host.url", "http://192.168.0.1");
     settings.setProperty(CoreProperties.SERVER_BASE_URL, "http://myserver");
-    when(config.issueThreshold()).thenReturn(Severity.CRITICAL);
-
+    when(config.issueThreshold()).thenReturn(Severity.CRITICAL.name());
     when(config.reportNotInDiff()).thenReturn(true);
+    when(config.getLocale()).thenReturn(Locale.ENGLISH);
 
-
-    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, issues, null,
-      cache, new MarkDownUtils(settings));
+    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, null, new MarkDownUtils(settings));
   }
 
   @Test
   public void testPullRequestAnalysisWithNewIssues() {
-    Issue newIssue = mock(Issue.class);
     DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(newIssue.line()).thenReturn(1);
-    when(newIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(newIssue.severity()).thenReturn(Severity.BLOCKER);
-    when(newIssue.isNew()).thenReturn(true);
-    when(newIssue.message()).thenReturn("msg1");
+    PostJobIssue newIssue = newMockedIssue("foo:src/Foo.php", inputFile1, 1, Severity.BLOCKER, true, "msg1");
     when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
-    Issue lineNotVisible = mock(Issue.class);
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(lineNotVisible.componentKey()).thenReturn("foo:src/Foo.php");
-    when(lineNotVisible.line()).thenReturn(2);
-    when(lineNotVisible.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(lineNotVisible.severity()).thenReturn(Severity.BLOCKER);
-    when(lineNotVisible.isNew()).thenReturn(true);
-    when(lineNotVisible.message()).thenReturn("msg2");
+    PostJobIssue lineNotVisible = newMockedIssue("foo:src/Foo.php", inputFile1, 2, Severity.BLOCKER, true, "msg2");
     when(pullRequestFacade.getWebUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
 
-    Issue fileNotInPR = mock(Issue.class);
     DefaultInputFile inputFile2 = new DefaultInputFile("foo", "src/Foo2.php");
-    when(cache.byKey("foo:src/Foo2.php")).thenReturn(inputFile2);
-    when(fileNotInPR.componentKey()).thenReturn("foo:src/Foo2.php");
-    when(fileNotInPR.line()).thenReturn(1);
-    when(fileNotInPR.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(fileNotInPR.severity()).thenReturn(Severity.BLOCKER);
-    when(fileNotInPR.isNew()).thenReturn(true);
-    when(fileNotInPR.message()).thenReturn("msg3");
+    PostJobIssue fileNotInPR = newMockedIssue("foo:src/Foo2.php", inputFile2, 1, Severity.BLOCKER, true, "msg3");
 
-    Issue notNewIssue = mock(Issue.class);
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(notNewIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(notNewIssue.line()).thenReturn(1);
-    when(notNewIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(notNewIssue.severity()).thenReturn(Severity.BLOCKER);
-    when(notNewIssue.isNew()).thenReturn(false);
-    when(notNewIssue.message()).thenReturn("msg");
+    PostJobIssue notNewIssue = newMockedIssue("foo:src/Foo.php", inputFile1, 1, Severity.BLOCKER, false, "msg");
 
-    Issue issueOnDir = mock(Issue.class);
-    when(cache.byKey("foo:src")).thenReturn(null);
-    when(issueOnDir.componentKey()).thenReturn("foo:src");
-    when(issueOnDir.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(issueOnDir.severity()).thenReturn(Severity.BLOCKER);
-    when(issueOnDir.isNew()).thenReturn(true);
-    when(issueOnDir.message()).thenReturn("msg4");
+    PostJobIssue issueOnDir = newMockedIssue("foo:src", Severity.BLOCKER, true, "msg4");
 
-    Issue issueOnProject = mock(Issue.class);
-    when(issueOnProject.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(issueOnProject.componentKey()).thenReturn("foo");
-    when(issueOnProject.severity()).thenReturn(Severity.BLOCKER);
-    when(issueOnProject.isNew()).thenReturn(true);
-    when(issueOnProject.message()).thenReturn("msg");
+    PostJobIssue issueOnProject = newMockedIssue("foo", Severity.BLOCKER, true, "msg");
 
-    Issue globalIssue = mock(Issue.class);
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(globalIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(globalIssue.line()).thenReturn(null);
-    when(globalIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(globalIssue.severity()).thenReturn(Severity.BLOCKER);
-    when(globalIssue.isNew()).thenReturn(true);
-    when(globalIssue.message()).thenReturn("msg5");
+    PostJobIssue globalIssue = newMockedIssue("foo:src/Foo.php", inputFile1, null, Severity.BLOCKER, true, "msg5");
 
-    when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue, globalIssue, issueOnProject, issueOnDir, fileNotInPR, lineNotVisible, notNewIssue));
+    when(context.issues()).thenReturn(Arrays.<PostJobIssue>asList(newIssue, globalIssue, issueOnProject, issueOnDir, fileNotInPR, lineNotVisible, notNewIssue));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
     when(pullRequestFacade.hasFileLine(inputFile1, 1)).thenReturn(true);
 
-    pullRequestIssuePostJob.executeOn(null, null);
+    pullRequestIssuePostJob.execute(context);
     verify(pullRequestFacade).addGlobalComment(contains("SonarQube analysis reported 5 issues:"));
     verify(pullRequestFacade)
       .addGlobalComment(contains("* ![BLOCKER](https://raw.githubusercontent.com/teacurran/sonar-bitbucket/master/images/severity-blocker.png) 5 blocker"));
@@ -162,77 +108,70 @@ public class PullRequestIssuePostJobTest {
 
   @Test
   public void testPullRequestAnalysisWithNewCriticalIssues() {
-    Issue newIssue = mock(Issue.class);
     DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(newIssue.line()).thenReturn(1);
-    when(newIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(newIssue.severity()).thenReturn(Severity.CRITICAL);
-    when(newIssue.isNew()).thenReturn(true);
-    when(newIssue.message()).thenReturn("msg1");
+    PostJobIssue newIssue = newMockedIssue("foo:src/Foo.php", inputFile1, 1, Severity.CRITICAL, true, "msg1");
     when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
-    when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue));
+    when(context.issues()).thenReturn(Arrays.<PostJobIssue>asList(newIssue));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
     when(pullRequestFacade.hasFileLine(inputFile1, 1)).thenReturn(true);
 
-    pullRequestIssuePostJob.executeOn(null, null);
+    pullRequestIssuePostJob.execute(context);
 
     verify(pullRequestFacade).unapprovePullRequest();
   }
 
   @Test
   public void testPullRequestAnalysisWithNewIssuesNoBlockerNorCritical() {
-    Issue newIssue = mock(Issue.class);
     DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(newIssue.line()).thenReturn(1);
-    when(newIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(newIssue.severity()).thenReturn(Severity.MAJOR);
-    when(newIssue.isNew()).thenReturn(true);
-    when(newIssue.message()).thenReturn("msg1");
+    PostJobIssue newIssue = newMockedIssue("foo:src/Foo.php", inputFile1, 1, Severity.MAJOR, true, "msg1");
     when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
-    when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue));
+    when(context.issues()).thenReturn(Arrays.<PostJobIssue>asList(newIssue));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
     when(pullRequestFacade.hasFileLine(inputFile1, 1)).thenReturn(true);
 
-    pullRequestIssuePostJob.executeOn(null, null);
+    pullRequestIssuePostJob.execute(context);
 
     verify(pullRequestFacade).approvePullRequest();
   }
 
   @Test
   public void testPullRequestAnalysisWithNewBlockerAndCriticalIssues() {
-    Issue newIssue = mock(Issue.class);
     DefaultInputFile inputFile1 = new DefaultInputFile("foo", "src/Foo.php");
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(newIssue.componentKey()).thenReturn("foo:src/Foo.php");
-    when(newIssue.line()).thenReturn(1);
-    when(newIssue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(newIssue.severity()).thenReturn(Severity.CRITICAL);
-    when(newIssue.isNew()).thenReturn(true);
-    when(newIssue.message()).thenReturn("msg1");
+    PostJobIssue newIssue = newMockedIssue("foo:src/Foo.php", inputFile1, 1, Severity.CRITICAL, true, "msg1");
     when(pullRequestFacade.getWebUrl(inputFile1, 1)).thenReturn("http://github/blob/abc123/src/Foo.php#L1");
 
-    Issue lineNotVisible = mock(Issue.class);
-    when(cache.byKey("foo:src/Foo.php")).thenReturn(inputFile1);
-    when(lineNotVisible.componentKey()).thenReturn("foo:src/Foo.php");
-    when(lineNotVisible.line()).thenReturn(2);
-    when(lineNotVisible.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
-    when(lineNotVisible.severity()).thenReturn(Severity.BLOCKER);
-    when(lineNotVisible.isNew()).thenReturn(true);
-    when(lineNotVisible.message()).thenReturn("msg2");
+    PostJobIssue lineNotVisible = newMockedIssue("foo:src/Foo.php", inputFile1, 2, Severity.BLOCKER, true, "msg2");
     when(pullRequestFacade.getWebUrl(inputFile1, 2)).thenReturn("http://github/blob/abc123/src/Foo.php#L2");
 
-    when(issues.issues()).thenReturn(Arrays.<Issue>asList(newIssue, lineNotVisible));
+    when(context.issues()).thenReturn(Arrays.<PostJobIssue>asList(newIssue, lineNotVisible));
     when(pullRequestFacade.hasFile(inputFile1)).thenReturn(true);
     when(pullRequestFacade.hasFileLine(inputFile1, 1)).thenReturn(true);
 
-    pullRequestIssuePostJob.executeOn(null, null);
+    pullRequestIssuePostJob.execute(context);
 
     verify(pullRequestFacade).unapprovePullRequest();
   }
+
+  private PostJobIssue newMockedIssue(String componentKey, @CheckForNull DefaultInputFile inputFile, @CheckForNull Integer line, Severity severity,
+                                      boolean isNew, String message) {
+    PostJobIssue issue = mock(PostJobIssue.class);
+    when(issue.inputComponent()).thenReturn(inputFile);
+    when(issue.componentKey()).thenReturn(componentKey);
+    if (line != null) {
+      when(issue.line()).thenReturn(line);
+    }
+    when(issue.ruleKey()).thenReturn(RuleKey.of("repo", "rule"));
+    when(issue.severity()).thenReturn(severity);
+    when(issue.isNew()).thenReturn(isNew);
+    when(issue.message()).thenReturn(message);
+
+    return issue;
+  }
+
+  private PostJobIssue newMockedIssue(String componentKey, Severity severity, boolean isNew, String message) {
+      return newMockedIssue(componentKey, null, null, severity, isNew, message);
+  }
+
 }

@@ -32,9 +32,7 @@ import org.sonar.api.batch.postjob.PostJob;
 import org.sonar.api.batch.postjob.PostJobContext;
 import org.sonar.api.batch.postjob.PostJobDescriptor;
 import org.sonar.api.batch.postjob.issue.PostJobIssue;
-import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.measures.Metrics;
-import org.sonar.api.resources.Project;
 
 /**
  * Compute comments to be added on the pull request.
@@ -45,21 +43,17 @@ public class PullRequestIssuePostJob implements PostJob {
   private static final Comparator<PostJobIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final PullRequestFacade pullRequestFacade;
-  private final ProjectIssues projectIssues;
   private final Metrics metrics;
   private final BitBucketPluginConfiguration config;
-  private final InputFileCache inputFileCache;
   private final MarkDownUtils markDownUtils;
 
   public PullRequestIssuePostJob(BitBucketPluginConfiguration bitBucketPluginConfiguration,
-                                 PullRequestFacade pullRequestFacade, ProjectIssues projectIssues,
+                                 PullRequestFacade pullRequestFacade,
                                  Metrics metrics,
-                                 InputFileCache inputFileCache, MarkDownUtils markDownUtils) {
+                                 MarkDownUtils markDownUtils) {
     this.config = bitBucketPluginConfiguration;
     this.pullRequestFacade = pullRequestFacade;
-    this.projectIssues = projectIssues;
     this.metrics = metrics;
-    this.inputFileCache = inputFileCache;
     this.markDownUtils = markDownUtils;
   }
 
