@@ -153,8 +153,6 @@ public class BitBucketPlugin implements Plugin {
       BitBucketPluginConfiguration.class,
       PullRequestProjectBuilder.class,
       PullRequestFacade.class,
-      InputFileCacheSensor.class,
-      InputFileCache.class,
       MarkDownUtils.class);
   }
 
