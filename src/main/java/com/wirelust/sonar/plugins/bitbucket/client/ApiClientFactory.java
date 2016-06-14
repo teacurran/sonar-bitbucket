@@ -20,9 +20,7 @@
 package com.wirelust.sonar.plugins.bitbucket.client;
 
 import java.io.IOException;
-import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.DatatypeConverter;
 
 import com.wirelust.bitbucket.client.BitbucketAuthClient;
@@ -68,15 +66,12 @@ public class ApiClientFactory {
     ResteasyClient client = getRestEasyClient();
 
     client.register((ClientRequestFilter) clientRequestContext -> {
-      MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
-
-      String basicAuthentication;
       String token = config.clientId() + ":" + config.clientSecret();
-      basicAuthentication = "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
+      String basicAuthentication = "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
 
       LOGGER.debug("basic auth:{}", basicAuthentication);
 
-      headers.add("Authorization", basicAuthentication);
+      clientRequestContext.getHeaders().add("Authorization", basicAuthentication);
     });
 
     ResteasyWebTarget target = client.target(config.tokenEndpoint());
