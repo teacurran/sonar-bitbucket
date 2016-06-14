@@ -68,4 +68,16 @@ public class V2DAO {
       response.close();
       return comment;
   }
+
+  public void deletePullRequestComment(final PullRequest pullRequest, final Long commentId) {
+      Response response = client.deletePullRequestComment(
+        config.repositoryOwner(), config.repository(), pullRequest.getId(), commentId);
+      response.close();
+
+      if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+        throw new IllegalStateException(
+          String.format("Unable to delete review comment id:%d, expected:%d, got:%d",
+            commentId, 200, response.getStatus()));
+      }
+  }
 }

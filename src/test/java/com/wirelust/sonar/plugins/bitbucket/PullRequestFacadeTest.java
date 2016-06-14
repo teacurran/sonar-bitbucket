@@ -105,6 +105,9 @@ public class PullRequestFacadeTest {
   @Mock
   Response postCommentResponseSuccess;
 
+  @Mock
+  Response deleteCommentResponseSuccess;
+
   @Spy
   PullRequest pullRequest;
 
@@ -171,12 +174,28 @@ public class PullRequestFacadeTest {
     when(bitbucketV2Client.getPullRequestDiff(any(String.class), any(String.class), any(Long.class)))
       .thenReturn(diffResponse);
 
+    // post comment
     when(postCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
       any(V1Comment.class))).thenReturn(postCommentResponseSuccess);
+
+    // delete comment
+    when(deleteCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
+    when(bitbucketV2Client.deletePullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(Long.class))).thenReturn(deleteCommentResponseSuccess);
+
+    // post global comment
+    when(bitbucketV2Client.postPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(String.class))).thenReturn(postCommentResponseSuccess);
 
   }
 
@@ -363,6 +382,88 @@ public class PullRequestFacadeTest {
           return v1Comment.getCommentId() == 530190;
         }
       }));
+  }
+
+  @Test
+  public void shouldDeleteOutdatedPRComments() throws Exception {
+    setDefaultConfig();
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    pullRequestFacade.deleteOutdatedComments();
+
+    verify(bitbucketV2Client).deletePullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      eq(530189L));
+
+    verify(bitbucketV2Client).deletePullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      eq(530190L));
+  }
+
+  @Test
+  public void shouldDeleteOutdatedPRCommentsWithUpdate() throws Exception {
+    setDefaultConfig();
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    DefaultInputFile inputFile = new DefaultInputFile("", "pom.xml");
+    inputFile.setModuleBaseDir(temporaryFolder.getRoot().toPath());
+
+    pullRequestFacade.createOrUpdateReviewComment(inputFile, 381, "test comment");
+
+    verify(bitbucketV2Client).postPullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      argThat(new BaseMatcher<V1Comment>() {
+
+        @Override
+        public void describeTo(Description description) {
+        }
+
+        @Override
+        public boolean matches(Object o) {
+          V1Comment v1Comment = (V1Comment)o;
+          return v1Comment.getCommentId() == 530190;
+        }
+      }));
+
+    pullRequestFacade.deleteOutdatedComments();
+
+    verify(bitbucketV2Client).deletePullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      eq(530189L));
+
+    verify(bitbucketV2Client, never()).deletePullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      eq(530190L));
+  }
+
+  @Test
+  public void shouldBeAbleToPostGlobalComment() throws Exception {
+    setDefaultConfig();
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    pullRequestFacade.addGlobalComment("test comment");
+
+    verify(bitbucketV2Client).postPullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      eq("test comment"));
   }
 
   private void setDefaultConfig() {

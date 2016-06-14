@@ -23,7 +23,6 @@ import javax.ws.rs.core.Response;
 
 import com.wirelust.bitbucket.client.BitbucketV2Client;
 import com.wirelust.bitbucket.client.representations.PullRequest;
-import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.BitBucketPluginConfiguration;
 import com.wirelust.sonar.plugins.bitbucket.client.dao.V2DAO;
@@ -52,10 +51,10 @@ public class V2DAOTest {
   BitbucketV2Client bitbucketV2Client;
 
   @Mock
-  Response postCommentResponseSuccess;
+  Response responseSuccess;
 
   @Mock
-  Response postCommentResponseFailure;
+  Response responseFailure;
 
   Settings settings;
   BitBucketPluginConfiguration configuration;
@@ -74,28 +73,28 @@ public class V2DAOTest {
   }
 
   @Test
-  public void shouldBeAbleToRestPostPRCommentSuccess() {
-    when(postCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
+  public void shouldBeAbleToPostPRCommentSuccess() {
+    when(responseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
-      any(V1Comment.class))).thenReturn(postCommentResponseSuccess);
+      any(V1Comment.class))).thenReturn(responseSuccess);
 
     v2DAO.createOrUpdatePullRequestComment(pullRequest, 100L, "body", "filename", 100);
-    verify(postCommentResponseSuccess).close();
+    verify(responseSuccess).close();
 
   }
 
   @Test
-  public void shouldBeAbleToRestPostPRCommentFailure() {
-    when(postCommentResponseFailure.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-    when(postCommentResponseFailure.readEntity(String.class)).thenReturn("failure");
+  public void shouldBeAbleToPostPRCommentFailure() {
+    when(responseFailure.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    when(responseFailure.readEntity(String.class)).thenReturn("failure");
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
-      any(V1Comment.class))).thenReturn(postCommentResponseFailure);
+      any(V1Comment.class))).thenReturn(responseFailure);
 
     try {
       v2DAO.createOrUpdatePullRequestComment(pullRequest, 100L, "body", "filename", 100);
@@ -107,4 +106,23 @@ public class V2DAOTest {
     }
   }
 
+  @Test
+  public void shouldBeAbleToDeletePRCommentFailure() {
+    when(responseFailure.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    when(responseFailure.readEntity(String.class)).thenReturn("failure");
+    when(bitbucketV2Client.deletePullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(Long.class))).thenReturn(responseFailure);
+
+    try {
+      v2DAO.deletePullRequestComment(pullRequest, 1000L);
+
+      Assert.fail();
+    } catch (IllegalStateException e) {
+      assertEquals("Unable to delete review comment id:1000, expected:200, got:500",
+        e.getMessage());
+    }
+  }
 }

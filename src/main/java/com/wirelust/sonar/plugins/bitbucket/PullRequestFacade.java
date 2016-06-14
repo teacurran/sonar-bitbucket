@@ -49,7 +49,7 @@ import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sonar.api.BatchComponent;
+import org.sonar.api.batch.BatchSide;
 import org.sonar.api.batch.InstantiationStrategy;
 import org.sonar.api.batch.fs.InputComponent;
 import org.sonar.api.batch.fs.InputFile;
@@ -59,8 +59,9 @@ import org.sonar.api.scan.filesystem.PathResolver;
 /**
  * Facade for all WS interaction with GitHub.
  */
+@BatchSide
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class PullRequestFacade implements BatchComponent {
+public class PullRequestFacade {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestFacade.class);
 
@@ -278,48 +279,35 @@ public class PullRequestFacade implements BatchComponent {
     String fullpath = getPath(inputFile);
     LOGGER.info("creating comment:{} line:{}", fullpath, line, body);
 
-    try {
-      if (existingReviewCommentsByLocationByFile.containsKey(fullpath)
-        && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(line)) {
-        Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(line);
+    if (existingReviewCommentsByLocationByFile.containsKey(fullpath)
+      && existingReviewCommentsByLocationByFile.get(fullpath).containsKey(line)) {
+      Comment existingReview = existingReviewCommentsByLocationByFile.get(fullpath).get(line);
 
-        if (existingReview.getContent() != null
-          && existingReview.getContent().getRaw() != null
-          && !existingReview.getContent().getRaw().equals(body)) {
-            existingReview.getContent().setMarkup(body);
+      if (existingReview.getContent() != null
+        && existingReview.getContent().getRaw() != null
+        && !existingReview.getContent().getRaw().equals(body)) {
+          existingReview.getContent().setMarkup(body);
 
-            v2DAO.createOrUpdatePullRequestComment(pullRequest,
-              existingReview.getId(),
-              body,
-              fullpath,
-              line);
-        }
-        commentsToBeDeleted.remove(existingReview.getId());
-      } else {
           v2DAO.createOrUpdatePullRequestComment(pullRequest,
-            null,
+            existingReview.getId(),
             body,
             fullpath,
             line);
       }
-    } catch (Exception e) {
-      throw new IllegalStateException("Unable to create or update review comment in file " + fullpath + " at line " + line, e);
+      commentsToBeDeleted.remove(existingReview.getId());
+    } else {
+        v2DAO.createOrUpdatePullRequestComment(pullRequest,
+          null,
+          body,
+          fullpath,
+          line);
     }
   }
 
   public void deleteOutdatedComments() {
     for (Long commentId : commentsToBeDeleted) {
       LOGGER.info("deleting outdated comment:{}", commentId);
-
-      Response response = bitbucketClient.deletePullRequestComment(
-        config.repositoryOwner(), config.repository(), pullRequest.getId(), commentId);
-      response.close();
-
-      if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-        throw new IllegalStateException(
-          String.format("Unable to delete review comment id:%d, expected:%d, got:%d",
-            commentId, 200, response.getStatus()));
-      }
+      v2DAO.deletePullRequestComment(pullRequest, commentId);
     }
   }
 
