@@ -41,7 +41,7 @@ public class V2DAO {
     this.config = config;
   }
 
-  public void createOrUpdatePullRequestComment(final PullRequest pullRequest,
+  public V1Comment createOrUpdatePullRequestComment(final PullRequest pullRequest,
                                                   final Long id,
                                                   final String body,
                                                   final String fileName,
@@ -66,5 +66,6 @@ public class V2DAO {
       }
 
       response.close();
+      return comment;
   }
 }

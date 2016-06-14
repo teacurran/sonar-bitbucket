@@ -34,12 +34,15 @@ import com.wirelust.bitbucket.client.representations.Commit;
 import com.wirelust.bitbucket.client.representations.PullRequest;
 import com.wirelust.bitbucket.client.representations.User;
 import com.wirelust.bitbucket.client.representations.auth.OauthAccessToken;
+import com.wirelust.bitbucket.client.representations.v1.V1Comment;
 import com.wirelust.sonar.plugins.bitbucket.client.ApiClientFactory;
 import com.wirelust.sonar.plugins.bitbucket.jackson.JacksonObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.patch.Patch;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -98,6 +101,9 @@ public class PullRequestFacadeTest {
 
   @Mock
   Response diffResponse;
+
+  @Mock
+  Response postCommentResponseSuccess;
 
   @Spy
   PullRequest pullRequest;
@@ -165,6 +171,13 @@ public class PullRequestFacadeTest {
     when(bitbucketV2Client.getPullRequestDiff(any(String.class), any(String.class), any(Long.class)))
       .thenReturn(diffResponse);
 
+    when(postCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
+    when(bitbucketV2Client.postPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(postCommentResponseSuccess);
+
   }
 
   @Test
@@ -193,49 +206,36 @@ public class PullRequestFacadeTest {
   @Test
   public void initShouldFailWithoutLogin() {
     setDefaultConfig();
+
+    // Login is null
     settings.removeProperty(BitBucketPlugin.BITBUCKET_LOGIN);
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null");
 
-    try {
-      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
-      pullRequestFacade.init(123, temporaryFolder.getRoot());
-
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalStateException);
-      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null"));
-    }
+    // Login is empty
+    settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "");
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_LOGIN + " cannot be null");
   }
 
   @Test
   public void initShouldFailWithoutPassword() {
     setDefaultConfig();
+
     settings.removeProperty(BitBucketPlugin.BITBUCKET_PASS_KEY);
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_PASS_KEY + " cannot be null");
 
-    try {
-      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
-      pullRequestFacade.init(123, temporaryFolder.getRoot());
+    settings.setProperty(BitBucketPlugin.BITBUCKET_PASS_KEY, "");
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_PASS_KEY + " cannot be null");
 
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalStateException);
-      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_PASS_KEY + " cannot be null"));
-    }
   }
 
   @Test
   public void initShouldFailWithoutRepository() {
     setDefaultConfig();
     settings.removeProperty(BitBucketPlugin.BITBUCKET_REPO);
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_REPO + " cannot be null");
 
-    try {
-      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
-      pullRequestFacade.init(123, temporaryFolder.getRoot());
-
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalStateException);
-      Assert.assertTrue(e.getMessage().contains(BitBucketPlugin.BITBUCKET_REPO + " cannot be null"));
-    }
+    settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "");
+    testIllegalStateException(BitBucketPlugin.BITBUCKET_REPO + " cannot be null");
   }
 
   @Test
@@ -305,9 +305,82 @@ public class PullRequestFacadeTest {
     assertThat(patch.getFiles().size() == 7).isTrue();
   }
 
+  @Test
+  public void shouldBeAbleToPostNewPullRequestComment() throws Exception {
+    setDefaultConfig();
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    DefaultInputFile inputFile = new DefaultInputFile("", "sonar-ws/pom.xml");
+    inputFile.setModuleBaseDir(temporaryFolder.getRoot().toPath());
+
+    pullRequestFacade.createOrUpdateReviewComment(inputFile, 100, "test comment");
+
+    verify(bitbucketV2Client).postPullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      argThat(new BaseMatcher<V1Comment>() {
+
+        @Override
+        public void describeTo(Description description) {
+        }
+
+        @Override
+        public boolean matches(Object o) {
+          V1Comment v1Comment = (V1Comment)o;
+          return v1Comment.getCommentId() == null;
+        }
+      }));
+  }
+
+  @Test
+  public void shouldBeAbleToUpdateNewPullRequestComment() throws Exception {
+    setDefaultConfig();
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    DefaultInputFile inputFile = new DefaultInputFile("", "pom.xml");
+    inputFile.setModuleBaseDir(temporaryFolder.getRoot().toPath());
+
+    pullRequestFacade.createOrUpdateReviewComment(inputFile, 381, "test comment");
+
+    verify(bitbucketV2Client).postPullRequestComment(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()),
+      argThat(new BaseMatcher<V1Comment>() {
+
+        @Override
+        public void describeTo(Description description) {
+        }
+
+        @Override
+        public boolean matches(Object o) {
+          V1Comment v1Comment = (V1Comment)o;
+          return v1Comment.getCommentId() == 530190;
+        }
+      }));
+  }
+
   private void setDefaultConfig() {
     settings.setProperty(BitBucketPlugin.BITBUCKET_LOGIN, "login");
     settings.setProperty(BitBucketPlugin.BITBUCKET_PASS_KEY, "password");
     settings.setProperty(BitBucketPlugin.BITBUCKET_REPO, "test/repo");
   }
+
+  private void testIllegalStateException(String expectedError) {
+    try {
+      PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+      pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof IllegalStateException);
+      Assert.assertTrue(e.getMessage().contains(expectedError));
+    }
+  }
+
 }
