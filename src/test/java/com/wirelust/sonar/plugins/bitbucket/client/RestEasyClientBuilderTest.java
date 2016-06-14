@@ -25,11 +25,15 @@ import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyStore;
 import java.security.SecureRandom;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.engines.PassthroughTrustManager;
@@ -54,11 +58,14 @@ import static org.mockito.Mockito.when;
  * @author T. Curran
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SSLContext.class})
+@PrepareForTest({SSLContext.class, SSLContexts.class})
 public class RestEasyClientBuilderTest {
 
   @Mock
   SSLContext sslContext;
+
+  @Mock
+  SSLContextBuilder sslContextBuilder;
 
   @Before
   public void init() throws Exception {
@@ -66,6 +73,8 @@ public class RestEasyClientBuilderTest {
     when(sslContext.getSocketFactory()).thenReturn(new MockSSLSocketFactory());
 
     PowerMockito.mockStatic(SSLContext.class);
+    PowerMockito.mockStatic(SSLContexts.class);
+
     when(SSLContext.getInstance("SSL")).thenReturn(sslContext);
 
   }
@@ -95,6 +104,28 @@ public class RestEasyClientBuilderTest {
       .build();
 
     verify(sslContext).init(any(), any(PassthroughTrustManager[].class), any(SecureRandom.class));
+  }
+
+  @Test
+  public void shouldBeAbleToInitilizeReasteasyClientBuilderWithoutClientKeyStore() throws Exception {
+    ResteasyProviderFactory resteasyProviderFactory = ResteasyProviderFactory.getInstance();
+
+    when(SSLContexts.custom()).thenReturn(sslContextBuilder);
+    when(sslContextBuilder.useProtocol(any())).thenReturn(sslContextBuilder);
+    when(sslContextBuilder.setSecureRandom(any())).thenReturn(sslContextBuilder);
+    when(sslContextBuilder.loadKeyMaterial(any(KeyStore.class), any())).thenReturn(sslContextBuilder);
+    when(sslContextBuilder.loadTrustMaterial(any(KeyStore.class), any(TrustStrategy.class)))
+      .thenReturn(sslContextBuilder);
+    when(sslContextBuilder.build()).thenReturn(sslContext);
+
+    ResteasyClient client = new CustomResteasyClientBuilder()
+      .providerFactory(resteasyProviderFactory)
+      .keyStore(KeyStore.getInstance(KeyStore.getDefaultType()), "")
+      .trustStore(KeyStore.getInstance(KeyStore.getDefaultType()))
+      .build();
+
+    verify(sslContextBuilder).useProtocol(SSLConnectionSocketFactory.TLS);
+    verify(sslContextBuilder).setSecureRandom(any());
   }
 
   @Test
