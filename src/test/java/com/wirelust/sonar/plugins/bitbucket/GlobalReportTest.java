@@ -19,8 +19,6 @@
  */
 package com.wirelust.sonar.plugins.bitbucket;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import javax.annotation.CheckForNull;
 
@@ -33,7 +31,6 @@ import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
-import org.sonar.api.issue.internal.DefaultIssue;
 import org.sonar.api.rule.RuleKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,8 +40,6 @@ import static org.mockito.Mockito.when;
 public class GlobalReportTest {
 
   private static final String GITHUB_URL = "https://github.com/teacurran/sonar-bitbucket";
-
-  private List<DefaultIssue> issues = new ArrayList<>();
 
   private Settings settings;
   BitBucketPluginConfiguration config;
