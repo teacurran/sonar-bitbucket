@@ -67,19 +67,16 @@ public class ApiClientFactory {
 
     ResteasyClient client = getRestEasyClient();
 
-    client.register(new ClientRequestFilter() {
-      @Override
-      public void filter(ClientRequestContext clientRequestContext) throws IOException {
-        MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
+    client.register((ClientRequestFilter) clientRequestContext -> {
+      MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
 
-        String basicAuthentication;
-        String token = config.clientId() + ":" + config.clientSecret();
-        basicAuthentication =  "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
+      String basicAuthentication;
+      String token = config.clientId() + ":" + config.clientSecret();
+      basicAuthentication = "BASIC " + DatatypeConverter.printBase64Binary(token.getBytes("UTF-8"));
 
-        LOGGER.debug("basic auth:{}", basicAuthentication);
+      LOGGER.debug("basic auth:{}", basicAuthentication);
 
-        headers.add("Authorization", basicAuthentication);
-      }
+      headers.add("Authorization", basicAuthentication);
     });
 
     ResteasyWebTarget target = client.target(config.tokenEndpoint());
@@ -92,12 +89,8 @@ public class ApiClientFactory {
     ResteasyClient client = getRestEasyClient();
 
     if (authToken != null) {
-      client.register(new ClientRequestFilter() {
-        @Override
-        public void filter(ClientRequestContext requestContext) throws IOException {
-          requestContext.getHeaders().add("Authorization", "Bearer " + authToken);
-        }
-      });
+      client.register((ClientRequestFilter) requestContext
+        -> requestContext.getHeaders().add("Authorization", "Bearer " + authToken));
     }
 
     ResteasyWebTarget target = client.target(config.endpoint());
