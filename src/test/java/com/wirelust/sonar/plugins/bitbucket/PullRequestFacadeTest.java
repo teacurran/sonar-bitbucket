@@ -57,6 +57,7 @@ import org.sonar.api.batch.fs.internal.DefaultInputFile;
 import org.sonar.api.config.Settings;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -103,10 +104,10 @@ public class PullRequestFacadeTest {
   Response diffResponse;
 
   @Mock
-  Response postCommentResponseSuccess;
+  Response responseSuccess;
 
   @Mock
-  Response deleteCommentResponseSuccess;
+  Response responseFailure;
 
   @Spy
   PullRequest pullRequest;
@@ -174,28 +175,30 @@ public class PullRequestFacadeTest {
     when(bitbucketV2Client.getPullRequestDiff(any(String.class), any(String.class), any(Long.class)))
       .thenReturn(diffResponse);
 
+
+    when(responseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
+    when(responseFailure.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+
     // post comment
-    when(postCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
-      any(V1Comment.class))).thenReturn(postCommentResponseSuccess);
+      any(V1Comment.class))).thenReturn(responseSuccess);
 
     // delete comment
-    when(deleteCommentResponseSuccess.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
     when(bitbucketV2Client.deletePullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
-      any(Long.class))).thenReturn(deleteCommentResponseSuccess);
+      any(Long.class))).thenReturn(responseSuccess);
 
     // post global comment
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
       any(Long.class),
-      any(String.class))).thenReturn(postCommentResponseSuccess);
+      any(String.class))).thenReturn(responseSuccess);
 
   }
 
@@ -382,6 +385,93 @@ public class PullRequestFacadeTest {
           return v1Comment.getCommentId() == 530190;
         }
       }));
+  }
+
+  @Test
+  public void shouldBeAbleToApprovePullRequest() throws Exception {
+    setDefaultConfig();
+
+    // post global comment
+    when(bitbucketV2Client.postPullRequestApproval(
+      any(String.class),
+      any(String.class),
+      any(Long.class))).thenReturn(responseSuccess);
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    pullRequestFacade.approvePullRequest();
+
+    verify(bitbucketV2Client).postPullRequestApproval(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()));
+  }
+
+  @Test
+  public void shouldBeAbleToUnapprovePullRequest() throws Exception {
+    setDefaultConfig();
+
+    // post global comment
+    when(bitbucketV2Client.deletePullRequestApproval(
+      any(String.class),
+      any(String.class),
+      any(Long.class))).thenReturn(responseSuccess);
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    pullRequestFacade.unapprovePullRequest();
+
+    verify(bitbucketV2Client).deletePullRequestApproval(
+      eq(configuration.repositoryOwner()),
+      eq(configuration.repository()),
+      eq(pullRequest.getId()));
+  }
+
+  @Test
+  public void shouldHandlePullRequestApprovalFailure() throws Exception {
+    setDefaultConfig();
+
+    // post global comment
+    when(bitbucketV2Client.postPullRequestApproval(
+      any(String.class),
+      any(String.class),
+      any(Long.class))).thenReturn(responseFailure);
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+    pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+    try {
+      pullRequestFacade.approvePullRequest();
+
+      Assert.fail();
+    } catch (IllegalStateException e) {
+      assertEquals("Unable to update pull request approval status. expected:200, got:500", e.getMessage());
+    }
+  }
+
+  @Test
+  public void shouldHandleBuildStatusFailure() throws Exception {
+    setDefaultConfig();
+
+    // post global comment
+    when(bitbucketV2Client.postBuildStatus(
+      any(String.class),
+      any(String.class),
+      any(String.class),
+      any(BuildStatus.class))).thenReturn(responseFailure);
+
+    PullRequestFacade pullRequestFacade = new PullRequestFacade(configuration, apiClientFactory);
+
+    try {
+      pullRequestFacade.init(123, temporaryFolder.getRoot());
+
+
+      Assert.fail();
+    } catch (IllegalStateException e) {
+      assertEquals("Unable to perform Bitbucket WS operation", e.getMessage());
+    }
   }
 
   @Test

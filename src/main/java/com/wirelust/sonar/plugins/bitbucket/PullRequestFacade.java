@@ -338,7 +338,7 @@ public class PullRequestFacade {
     createOrUpdateApproval(false);
   }
 
-  private void createOrUpdateBuildStatus(BuildStatus.State state) {
+  public void createOrUpdateBuildStatus(BuildStatus.State state) {
     BuildStatus buildStatus = new BuildStatus();
     buildStatus.setKey(config.ciKey());
     buildStatus.setName(config.ciName());
