@@ -1,6 +1,6 @@
 # SonarQube BitBucket Plugin
 
-image::http://jenkins.approachingpi.com/job/teacurran-sonar-bitbucket.master.ci/badge/icon
+image:http://jenkins.approachingpi.com/job/teacurran-sonar-bitbucket.master.ci/badge/icon[build status (jenkins)]
 
 This is a fork of the SonarQube GitHub Plugin to offer the same functionality to BitBucket.
 
