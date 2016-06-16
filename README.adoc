@@ -2,7 +2,7 @@
 
 image:http://jenkins.approachingpi.com/job/teacurran-sonar-bitbucket.master.ci/badge/icon[build status (jenkins), link="http://jenkins.approachingpi.com/job/teacurran-sonar-bitbucket.master.ci/"]
 image:https://img.shields.io/maven-central/v/com.wirelust.sonar.plugins.bitbucket/sonar-bitbucket-plugin.svg?maxAge=2592000[Maven Central Status, link="http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22sonar-bitbucket-plugin%22"]
-image:https://img.shields.io/badge/LICENSE-LGPL%203-blue.svg[License Badge, link="https://opensource.org/licenses/MIT"]
+image:https://img.shields.io/badge/LICENSE-LGPL%203-blue.svg[License Badge, link="https://www.gnu.org/licenses/lgpl-3.0.en.html"]
 
 This is a fork of the SonarQube GitHub Plugin to offer the same functionality to BitBucket.
 
