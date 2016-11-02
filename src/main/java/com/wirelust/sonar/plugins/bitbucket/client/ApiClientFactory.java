@@ -34,12 +34,16 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sonar.api.batch.BatchSide;
+import org.sonar.api.batch.InstantiationStrategy;
 
 /**
  * Date: 02-Jun-2016
  *
  * @author T. Curran
  */
+@BatchSide
+@InstantiationStrategy(InstantiationStrategy.PER_BATCH)
 public class ApiClientFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ApiClientFactory.class);
