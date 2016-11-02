@@ -64,7 +64,7 @@ public class PullRequestIssuePostJobTest {
     when(config.reportNotInDiff()).thenReturn(true);
     when(config.getLocale()).thenReturn(Locale.ENGLISH);
 
-    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, null, new MarkDownUtils(settings));
+    pullRequestIssuePostJob = new PullRequestIssuePostJob(config, pullRequestFacade, new MarkDownUtils(settings));
   }
 
   @Test
