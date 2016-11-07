@@ -54,12 +54,21 @@ public class V2DAO {
       comment.setContent(body);
       comment.setFilename(fileName);
       comment.setLineTo(line);
-      Response response = client.postPullRequestComment(
-        config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
+      Response response = null;
+      if (id == null) {
+        response = client.postPullRequestComment(
+          config.repositoryOwner(), config.repository(), pullRequest.getId(), comment);
+      } else {
+        response = client.putPullRequestComment(
+          config.repositoryOwner(), config.repository(), pullRequest.getId(), id, comment);
+      }
 
-      if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-        String responseBody = response.readEntity(String.class);
-        response.close();
+      if (response == null || response.getStatus() != Response.Status.OK.getStatusCode()) {
+        String responseBody = null;
+        if (response != null) {
+          responseBody = response.readEntity(String.class);
+          response.close();
+        }
         throw new IllegalStateException(
           String.format("Unable to update review comment file:%s, expected:%d, got:%d, body:%s",
             fileName, 200, response.getStatus(), responseBody));

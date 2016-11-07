@@ -81,6 +81,13 @@ public class V2DAOTest {
       any(Long.class),
       any(V1Comment.class))).thenReturn(responseSuccess);
 
+    when(bitbucketV2Client.putPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(responseSuccess);
+
     v2DAO.createOrUpdatePullRequestComment(pullRequest, 100L, "body", "filename", 100);
     verify(responseSuccess).close();
 
@@ -93,6 +100,13 @@ public class V2DAOTest {
     when(bitbucketV2Client.postPullRequestComment(
       any(String.class),
       any(String.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(responseFailure);
+
+    when(bitbucketV2Client.putPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
       any(Long.class),
       any(V1Comment.class))).thenReturn(responseFailure);
 

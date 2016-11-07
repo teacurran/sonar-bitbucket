@@ -186,6 +186,14 @@ public class PullRequestFacadeTest {
       any(Long.class),
       any(V1Comment.class))).thenReturn(responseSuccess);
 
+    // put comment
+    when(bitbucketV2Client.putPullRequestComment(
+      any(String.class),
+      any(String.class),
+      any(Long.class),
+      any(Long.class),
+      any(V1Comment.class))).thenReturn(responseSuccess);
+
     // delete comment
     when(bitbucketV2Client.deletePullRequestComment(
       any(String.class),
@@ -369,10 +377,11 @@ public class PullRequestFacadeTest {
 
     pullRequestFacade.createOrUpdateReviewComment(inputFile, 381, "test comment");
 
-    verify(bitbucketV2Client).postPullRequestComment(
+    verify(bitbucketV2Client).putPullRequestComment(
       eq(configuration.repositoryOwner()),
       eq(configuration.repository()),
       eq(pullRequest.getId()),
+      eq(530190L),
       argThat(new BaseMatcher<V1Comment>() {
 
         @Override
@@ -508,10 +517,11 @@ public class PullRequestFacadeTest {
 
     pullRequestFacade.createOrUpdateReviewComment(inputFile, 381, "test comment");
 
-    verify(bitbucketV2Client).postPullRequestComment(
+    verify(bitbucketV2Client).putPullRequestComment(
       eq(configuration.repositoryOwner()),
       eq(configuration.repository()),
       eq(pullRequest.getId()),
+      eq(530190L),
       argThat(new BaseMatcher<V1Comment>() {
 
         @Override
